@@ -27,6 +27,21 @@ df = pd.DataFrame(data)
 # Filter by selected date
 filtered_df = df[df["date"] <= pd.to_datetime(selected_date)]
 
+# Map of flood risk by location
+st.subheader("🗺️ Flood Risk Map")
+map_df = filtered_df[["lat", "lon", "rainfall_mm", "flood_label"]]
+map_df["Flood Status"] = map_df["flood_label"].apply(lambda x: "Flood" if x == 1 else "No Flood")
+fig_map = px.scatter_mapbox(map_df,
+                            lat="lat",
+                            lon="lon",
+                            color="Flood Status",
+                            size="rainfall_mm",
+                            zoom=7,
+                            height=400,
+                            mapbox_style="open-street-map",
+                            title="Flood Status Map")
+st.plotly_chart(fig_map, use_container_width=True)
+
 # Rainfall chart
 st.subheader(f"📈 Rainfall Trends in {selected_district} (Last 30 Days)")
 fig = px.line(filtered_df, x="date", y=["rainfall_mm", "rainfall_3d"],
@@ -45,20 +60,6 @@ st.metric(label="3-Day Accumulated Rainfall", value=latest["rainfall_3d"])
 flood_risk = "Flood Likely" if latest["flood_label"] == 1 else "No Flood"
 st.markdown(f"### Predicted Status: **{flood_risk}**")
 
-# Map of flood risk by location
-st.subheader("🗺️ Flood Risk Map")
-map_df = filtered_df[["lat", "lon", "rainfall_mm", "flood_label"]]
-map_df["Flood Status"] = map_df["flood_label"].apply(lambda x: "Flood" if x == 1 else "No Flood")
-fig_map = px.scatter_mapbox(map_df,
-                            lat="lat",
-                            lon="lon",
-                            color="Flood Status",
-                            size="rainfall_mm",
-                            zoom=7,
-                            height=400,
-                            mapbox_style="open-street-map",
-                            title="Flood Status Map")
-st.plotly_chart(fig_map, use_container_width=True)
 
 # Show data table
 with st.expander("🔍 Show Raw Data"):
