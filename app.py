@@ -8,7 +8,7 @@ st.set_page_config(page_title="Terengganu Flood Prediction Dashboard", layout="w
 st.title("🌧️ Terengganu Flood Prediction Dashboard")
 
 # Sidebar filters
-st.sidebar.header("Filters")
+st.header("Filters")
 selected_date = st.sidebar.date_input("Select a date", datetime(2021, 12, 1))
 selected_district = st.sidebar.selectbox("Select a district", ["Besut", "Dungun", "Hulu Terengganu", "Kemaman", "Setiu"])
 
