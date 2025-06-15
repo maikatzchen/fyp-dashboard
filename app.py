@@ -8,7 +8,7 @@ st.set_page_config(page_title="Terengganu Flood Prediction Dashboard", layout="w
 st.title("🌧️ Terengganu Flood Prediction Dashboard")
 
 # Sidebar filters
-st.header("Filters")
+st.sidebar.header("Filters")
 selected_date = st.sidebar.date_input("Select a date", datetime(2021, 12, 1))
 selected_district = st.sidebar.selectbox("Select a district", ["Besut", "Dungun", "Hulu Terengganu", "Kemaman", "Setiu"])
 
@@ -37,7 +37,7 @@ fig_map = px.scatter_mapbox(map_df,
                             color="Flood Status",
                             size="rainfall_mm",
                             zoom=7,
-                            height=400,
+                            height=500,
                             mapbox_style="open-street-map",
                             title="Flood Status Map")
 st.plotly_chart(fig_map, use_container_width=True)
