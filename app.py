@@ -40,6 +40,9 @@ fig_map = px.scatter_mapbox(map_df,
                             height=500,
                             mapbox_style="open-street-map",
                             title="Flood Status Map")
+fig_map.update_layout(mapbox=dict(zoom=7),
+                      margin={"r":0,"t":40,"l":0,"b":0},
+                      dragmode='zoom')
 st.plotly_chart(fig_map, use_container_width=True)
 
 # Rainfall chart
