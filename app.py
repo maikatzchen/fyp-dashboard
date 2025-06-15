@@ -18,7 +18,9 @@ data = {
     "rainfall_mm": [round(abs(i*1.3 % 70), 2) for i in range(30)],
     "rainfall_3d": [round(abs(i*2.4 % 150), 2) for i in range(30)],
     "flood_label": [1 if i % 7 == 0 else 0 for i in range(30)],
-    "district": [selected_district]*30
+    "district": [selected_district]*30,
+    "lat": [5.5 + (i % 5) * 0.1 for i in range(30)],
+    "lon": [103.0 + (i % 5) * 0.1 for i in range(30)]
 }
 df = pd.DataFrame(data)
 
@@ -42,6 +44,21 @@ st.metric(label="3-Day Accumulated Rainfall", value=latest["rainfall_3d"])
 
 flood_risk = "Flood Likely" if latest["flood_label"] == 1 else "No Flood"
 st.markdown(f"### Predicted Status: **{flood_risk}**")
+
+# Map of flood risk by location
+st.subheader("🗺️ Flood Risk Map")
+map_df = filtered_df[["lat", "lon", "rainfall_mm", "flood_label"]]
+map_df["Flood Status"] = map_df["flood_label"].apply(lambda x: "Flood" if x == 1 else "No Flood")
+fig_map = px.scatter_mapbox(map_df,
+                            lat="lat",
+                            lon="lon",
+                            color="Flood Status",
+                            size="rainfall_mm",
+                            zoom=7,
+                            height=400,
+                            mapbox_style="open-street-map",
+                            title="Flood Status Map")
+st.plotly_chart(fig_map, use_container_width=True)
 
 # Show data table
 with st.expander("🔍 Show Raw Data"):
