@@ -38,7 +38,7 @@ def get_openweather_rainfall(lat, lon):
 def get_gee_3day_rainfall(lat, lon, end_date):
     start_date = end_date - datetime.timedelta(days=3)
     point = ee.Geometry.Point(lon, lat)
-    dataset = ee.ImageCollection("NASA/GPM_L3/IMERG_EARLY") \
+    dataset = ee.ImageCollection("NASA/GPM_L3/IMERG_V06") \
         .filterDate(str(start_date), str(end_date)) \
         .select("precipitationCal")
     rainfall_image = dataset.sum()
