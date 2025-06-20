@@ -3,36 +3,6 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime
 
-# Initialize Earth Engine
-ee.Initialize()
-
-def get_gee_3day_rainfall(lat, lon):
-    # Set date range: last 3 days up to now
-    end_date = datetime.datetime.utcnow().date()
-    start_date = end_date - datetime.timedelta(days=3)
-
-    point = ee.Geometry.Point(lon, lat)
-
-    # Load IMERG dataset
-    dataset = ee.ImageCollection("NASA/GPM_L3/IMERG_V06") \
-        .filterDate(str(start_date), str(end_date)) \
-        .select("precipitationCal")
-
-    # Sum rainfall over the 3-day period
-    rainfall_image = dataset.sum()
-
-    # Reduce to point value
-    rainfall_mm = rainfall_image.reduceRegion(
-        reducer=ee.Reducer.mean(),
-        geometry=point,
-        scale=10000
-    ).get("precipitationCal")
-
-    try:
-        return rainfall_mm.getInfo()
-    except:
-        return 0.0  # fallback if GEE fails
-
 
 # Page setup
 st.set_page_config(page_title="Terengganu Flood Prediction Dashboard", layout="wide")
@@ -141,7 +111,7 @@ def get_openweather_rainfall(lat, lon, api_key):
 rainfall_now = get_openweather_rainfall(lat, lon, api_key)
 
 # Call GEE function
-rainfall_3d = get_gee_3day_rainfall(lat, lon)
+rainfall_3d = 85.3
 
 col1, col2 = st.columns(2)
 
