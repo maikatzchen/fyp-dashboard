@@ -62,7 +62,7 @@ districts = {
     "Besut": (5.79, 102.56),
     "Dungun": (4.75, 103.41),
     "Hulu Terengganu": (5.07, 103.01),
-    "Kemaman": (3.10, 101.73),
+    "Kemaman": (4.23, 103.42),
     "Setiu": (5.52, 102.74)
 }
 selected_date = st.sidebar.date_input("Select a date", datetime.date.today())
