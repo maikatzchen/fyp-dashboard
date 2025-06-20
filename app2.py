@@ -7,7 +7,6 @@ import ee
 import json
 from google.oauth2 import service_account
 from ee import oauth
-import geemap
 
 # === LOAD GEE CREDENTIALS FROM STREAMLIT SECRETS ===
 def initialize_ee():
