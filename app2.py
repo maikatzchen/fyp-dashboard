@@ -35,8 +35,7 @@ def get_openweather_rainfall(lat, lon):
         return 0.0
 
 # === FUNCTION: Get 3-day rainfall from GEE ===
-def get_gee_3day_rainfall(lat, lon):
-    end_date = datetime.datetime.utcnow().date()
+def get_gee_3day_rainfall(lat, lon, end_date):
     start_date = end_date - datetime.timedelta(days=3)
     point = ee.Geometry.Point(lon, lat)
     dataset = ee.ImageCollection("NASA/GPM_L3/IMERG_V06") \
@@ -68,6 +67,8 @@ districts = {
 }
 selected_district = st.sidebar.selectbox("Select a district", list(districts.keys()))
 lat, lon = districts[selected_district]
+selected_date = st.sidebar.date_input("Select a date", datetime.date.today())
+
 
 # === Real-Time Weather Panel ===
 st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
