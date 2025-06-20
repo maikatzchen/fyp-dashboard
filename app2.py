@@ -65,9 +65,10 @@ districts = {
     "Kemaman": (4.23, 103.42),
     "Setiu": (5.52, 102.74)
 }
+selected_date = st.sidebar.date_input("Select a date", datetime.date.today())
 selected_district = st.sidebar.selectbox("Select a district", list(districts.keys()))
 lat, lon = districts[selected_district]
-selected_date = st.sidebar.date_input("Select a date", datetime.date.today())
+
 
 
 # === Real-Time Weather Panel ===
