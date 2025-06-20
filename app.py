@@ -63,6 +63,51 @@ st.metric(label="3-Day Accumulated Rainfall", value=latest["rainfall_3d"])
 flood_risk = "Flood Likely" if latest["flood_label"] == 1 else "No Flood"
 st.markdown(f"### Predicted Status: **{flood_risk}**")
 
+# ==========================
+# 🌧️ Real-Time Rainfall Section
+# ==========================
+
+st.subheader("🌦️ Real-Time Weather Inputs (Live)")
+
+import requests
+
+# Terengganu coordinates
+lat, lon = 5.33, 103.14
+api_key = "0ddef092786b6f1881790a638a583445"  # Replace with your API key
+
+def get_openweather_rainfall(lat, lon, api_key):
+    url = "https://api.openweathermap.org/data/2.5/weather"
+    params = {
+        "lat": lat,
+        "lon": lon,
+        "appid": api_key,
+        "units": "metric"
+    }
+
+    response = requests.get(url, params=params)
+    data = response.json()
+
+    try:
+        rainfall_mm = data["rain"]["1h"]  # Rainfall in mm over the last hour
+    except KeyError:
+        rainfall_mm = 0.0
+
+    return rainfall_mm
+
+# Call the function
+rainfall_now = get_openweather_rainfall(lat, lon, api_key)
+
+# Simulate 3-day rainfall (to be replaced by GEE function)
+rainfall_3d = 85.2  # Replace this with actual GEE result later
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.metric(label="🌧️ Hourly Rainfall (mm)", value=f"{rainfall_now:.2f}")
+
+with col2:
+    st.metric(label="📊 3-Day Rainfall Total (mm)", value=f"{rainfall_3d:.2f}")
+
 
 # Show data table
 with st.expander("🔍 Show Raw Data"):
