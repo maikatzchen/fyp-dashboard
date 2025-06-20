@@ -3,8 +3,19 @@
 import streamlit as st
 import requests
 import datetime
-import os
 import ee
+import json
+from google.oauth2 import service_account
+
+# === LOAD GEE CREDENTIALS FROM STREAMLIT SECRETS ===
+service_account_info = st.secrets["gcp_service_account"]
+credentials = service_account.Credentials.from_service_account_info(
+    service_account_info,
+    scopes=["https://www.googleapis.com/auth/cloud-platform"]
+)
+
+# Initialize Earth Engine
+ee.Initialize(credentials)
 
 # === CONFIGURATION ===
 OPENWEATHER_API_KEY = "0ddef092786b6f1881790a638a583445"  
