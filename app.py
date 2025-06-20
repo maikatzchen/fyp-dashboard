@@ -2,6 +2,39 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from datetime import datetime
+import ee
+import datetime
+
+# Initialize Earth Engine
+ee.Initialize()
+
+def get_gee_3day_rainfall(lat, lon):
+    # Set date range: last 3 days up to now
+    end_date = datetime.datetime.utcnow().date()
+    start_date = end_date - datetime.timedelta(days=3)
+
+    point = ee.Geometry.Point(lon, lat)
+
+    # Load IMERG dataset
+    dataset = ee.ImageCollection("NASA/GPM_L3/IMERG_V06") \
+        .filterDate(str(start_date), str(end_date)) \
+        .select("precipitationCal")
+
+    # Sum rainfall over the 3-day period
+    rainfall_image = dataset.sum()
+
+    # Reduce to point value
+    rainfall_mm = rainfall_image.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=point,
+        scale=10000
+    ).get("precipitationCal")
+
+    try:
+        return rainfall_mm.getInfo()
+    except:
+        return 0.0  # fallback if GEE fails
+
 
 # Page setup
 st.set_page_config(page_title="Terengganu Flood Prediction Dashboard", layout="wide")
@@ -11,6 +44,18 @@ st.title("🌧️ Terengganu Flood Prediction Dashboard")
 st.sidebar.header("Filters")
 selected_date = st.sidebar.date_input("Select a date", datetime(2021, 12, 1))
 selected_district = st.sidebar.selectbox("Select a district", ["Besut", "Dungun", "Hulu Terengganu", "Kemaman", "Setiu"])
+
+# District coordinates dictionary
+district_coords = {
+    "Besut": (5.79, 102.56),
+    "Dungun": (4.75, 103.41),
+    "Hulu Terengganu": (5.07, 103.01),
+    "Kemaman": (4.23, 103.42),
+    "Setiu": (5.52, 102.74)
+}
+
+# Get lat/lon based on selected district
+lat, lon = district_coords[selected_district]
 
 # Mock data (replace this with your actual dataset later)
 data = {
@@ -97,8 +142,8 @@ def get_openweather_rainfall(lat, lon, api_key):
 # Call the function
 rainfall_now = get_openweather_rainfall(lat, lon, api_key)
 
-# Simulate 3-day rainfall (to be replaced by GEE function)
-rainfall_3d = 85.2  # Replace this with actual GEE result later
+# Call GEE function
+rainfall_3d = get_gee_3day_rainfall(lat, lon)
 
 col1, col2 = st.columns(2)
 
