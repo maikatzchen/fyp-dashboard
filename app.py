@@ -57,7 +57,17 @@ district_coords = {
 # Get lat/lon based on selected district
 lat, lon = district_coords[selected_district]
 
-
+# Mock data (replace this with your actual dataset later)
+data = {
+    "date": pd.date_range(start="2021-11-01", periods=30, freq='D'),
+    "rainfall_mm": [round(abs(i*1.3 % 70), 2) for i in range(30)],
+    "rainfall_3d": [round(abs(i*2.4 % 150), 2) for i in range(30)],
+    "flood_label": [1 if i % 7 == 0 else 0 for i in range(30)],
+    "district": [selected_district]*30,
+    "lat": [5.5 + (i % 5) * 0.1 for i in range(30)],
+    "lon": [103.0 + (i % 5) * 0.1 for i in range(30)]
+}
+df = pd.DataFrame(data)
 
 # Filter by selected date
 filtered_df = df[df["date"] <= pd.to_datetime(selected_date)]
