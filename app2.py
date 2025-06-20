@@ -17,8 +17,6 @@ initialize_ee()
 # === CONFIGURATION ===
 OPENWEATHER_API_KEY = "0ddef092786b6f1881790a638a583445"  
 
-# === GOOGLE EARTH ENGINE INIT ===
-ee.Initialize()
 
 # === FUNCTION: Get 1-hour rainfall from OpenWeatherMap ===
 def get_openweather_rainfall(lat, lon):
