@@ -11,7 +11,7 @@ from google.oauth2 import service_account
 service_account_info = st.secrets["gcp_service_account"]
 credentials = service_account.Credentials.from_service_account_info(
     service_account_info,
-    scopes=["https://www.googleapis.com/auth/cloud-platform"]
+    scopes=["https://www.googleapis.com"]
 )
 
 # Initialize Earth Engine
