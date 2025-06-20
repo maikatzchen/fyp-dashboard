@@ -29,7 +29,7 @@ def get_openweather_rainfall(lat, lon):
     }
     response = requests.get(url, params=params)
     data = response.json()
-    st.write("OpenWeather response:"; data)
+    st.write("OpenWeather response:", data)
     try:
         return data["rain"].get("1h", 0.0)
     except:
