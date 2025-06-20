@@ -29,7 +29,6 @@ def get_openweather_rainfall(lat, lon):
     }
     response = requests.get(url, params=params)
     data = response.json()
-    st.write("OpenWeather response:", data)
     try:
         return data["rain"].get("1h", 0.0)
     except:
@@ -80,7 +79,7 @@ rainfall_mm = get_openweather_rainfall(lat, lon)
 rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
 col1, col2 = st.columns(2)
-col1.metric("Hourly Rainfall (mm)", f"{rainfall_mm:.2f}")
+col1.metric("Today's Hourly Rainfall (mm)", f"{rainfall_mm:.2f}")
 col2.metric("3-Day Rainfall (mm)", f"{rainfall_3d:.2f}")
 
 # === Optional Map (showing location) ===
