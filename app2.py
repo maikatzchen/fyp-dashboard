@@ -29,6 +29,7 @@ def get_openweather_rainfall(lat, lon):
     }
     response = requests.get(url, params=params)
     data = response.json()
+    st.write("OpenWeather response:"; data)
     try:
         return data["rain"].get("1h", 0.0)
     except:
@@ -53,8 +54,8 @@ def get_gee_3day_rainfall(lat, lon, end_date):
         return 0.0
 
 # === STREAMLIT UI ===
-st.set_page_config(page_title="Terengganu Flood Prediction Dashboard", layout="wide")
-st.title("🌧️ Terengganu Flood Prediction Dashboard")
+st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
+st.title("🌧️ Flood Prediction Dashboard")
 
 # === District filter ===
 st.sidebar.header("Filters")
