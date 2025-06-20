@@ -4,14 +4,13 @@ import streamlit as st
 import requests
 import datetime
 import ee
-import json
 from google.oauth2 import service_account
-from ee import oauth
 
 # === LOAD GEE CREDENTIALS FROM STREAMLIT SECRETS ===
 def initialize_ee():
     service_account_info = st.secrets["gcp_service_account"]
-    credentials = service_account.Credentials.from_service_account_info(service_account_info)
+    credentials = service_account.Credentials.from_service_account_info(service_account_info,
+    scopes=["https://www.googleapis.com/auth/cloud-platform"])
     ee.Initialize(credentials)
 initialize_ee()
 
