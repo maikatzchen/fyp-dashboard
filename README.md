@@ -21,13 +21,13 @@ To develop a scalable and intelligent cloud solution that can:
   - IMERG Rainfall Data    
 
 - **OpenWeatherMap API**
-  - for real-time weather input)
+  - for real-time weather input
 
 - **Python**
   - for data preprocessing and model training
 
 - **Streamlit**
-  - for dashboard visualization)
+  - for dashboard visualization
 
 ## Features
 
