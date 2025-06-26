@@ -78,10 +78,11 @@ def get_daily_rainfall_gee(lat, lon, date_input, use_early_run=True):
             maxPixels=1e9
         )
 
-        rainfall_mm = result.get('precipitationCal')
-        if rainfall_mm is None:
-            return 0.0
-        return rainfall_mm.getInfo()
+        if 'precipitationCal' in result.getInfo():
+    return result.get('precipitationCal').getInfo()
+else:
+    return 0.0
+
 
     except Exception as e:
         st.error(f"[GEE Error] {e}")
