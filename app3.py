@@ -137,21 +137,38 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         return 0.0
 
 # === FUNCTION: Get daily rainfall from NASA POWER ===
-def debug_nasa_power_response(lat, lon, date_obj):
-    date_str = date_obj.strftime("%Y%m%d")
-    url = (
-        f"https://power.larc.nasa.gov/api/temporal/daily/point"
-        f"?start={date_str}&end={date_str}"
-        f"&latitude={lat}&longitude={lon}"
-        f"&community=ag&parameters=PRECTOT&format=JSON"
-    )
-    response = requests.get(url)
+def get_nasa_power_rainfall(lat, lon, date_obj):
     try:
+        date_str = date_obj.strftime("%Y%m%d")
+        url = (
+            f"https://power.larc.nasa.gov/api/temporal/daily/point"
+            f"?start={date_str}&end={date_str}"
+            f"&latitude={lat}&longitude={lon}"
+            f"&community=ag&parameters=PRECTOT&format=JSON"
+        )
+        response = requests.get(url)
         data = response.json()
-        st.write("🔍 Full NASA POWER JSON response:")
-        st.json(data)  # ✅ this will show us the whole structure
+
+        # Debugging output
+        st.write("🔍 Raw NASA POWER response:")
+        st.json(data)
+
+        if "properties" in data:
+            rainfall = (
+                data["properties"]
+                    .get("parameter", {})
+                    .get("PRECTOT", {})
+                    .get(date_str, 0.0)
+            )
+            return float(rainfall)
+        else:
+            st.warning("NASA POWER did not return 'properties'. Message:")
+            st.write(data.get("messages", "No error message returned."))
+            return 0.0
     except Exception as e:
-        st.error(f"[JSON Parse Error] {e}")
+        st.error(f"[NASA POWER Error] {e}")
+        return 0.0
+
 
 
 # === STREAMLIT UI ===
@@ -176,7 +193,7 @@ st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
 
 # Get real-time values
 rainfall_mm = get_openweather_rainfall(lat, lon)
-rainfall_daily = debug_nasa_power_response(lat, lon, selected_date)
+rainfall_daily = getl_nasa_power_rainfall(lat, lon, selected_date)
 rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
 col1, col2, col3 = st.columns(3)
