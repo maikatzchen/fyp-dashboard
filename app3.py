@@ -136,6 +136,27 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         st.error(f"[CHIRPS Error] {e}")
         return 0.0
 
+# === FUNCTION: Get daily rainfall from NASA POWER ===
+def get_daily_rainfall_nasa_power(lat, lon, date_obj):
+    try:
+        date_str = date_obj.strftime("%Y%m%d")
+        url = f"https://power.larc.nasa.gov/api/temporal/daily/point"
+        params = {
+            "parameters": "PRECTOT",
+            "start": date_str,
+            "end": date_str,
+            "latitude": lat,
+            "longitude": lon,
+            "format": "JSON"
+        }
+        response = requests.get(url, params=params)
+        data = response.json()
+        value = data['properties']['parameter']['PRECTOT'][date_str]
+        return float(value)
+    except Exception as e:
+        st.error(f"[NASA POWER Error] {e}")
+        return 0.0
+
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
 st.title("🌧️ Flood Prediction Dashboard")
@@ -158,7 +179,7 @@ st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
 
 # Get real-time values
 rainfall_mm = get_openweather_rainfall(lat, lon)
-rainfall_daily, source = get_daily_rainfall_gee(lat,lon, selected_date)
+rainfall_daily, source = get_daily_rainfall_nasa_power(lat,lon, selected_date)
 rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
 col1, col2, col3 = st.columns(3)
