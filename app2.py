@@ -54,34 +54,7 @@ def get_gee_3day_rainfall(lat, lon, end_date):
         return 0.0
 
 # === FUNCTION: Get Daily rainfall from GEE ===
-def get_daily_rainfall_gee(lat, lon, date_str):
-    try:
-        date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d')
-        start_date = ee.Date(date_obj.strftime('%Y-%m-%d'))
-        end_date = start_date.advance(1, 'day')
-        point = ee.Geometry.Point([lon, lat])
-        
-        dataset = ee.ImageCollection('NASA/GPM_L3/IMERG_V06') \
-            .filterDate(start_date, end_date) \
-            .select('precipitationCal')
 
-        daily_precip = dataset.sum()
-        result = daily_precip.reduceRegion(
-            reducer=ee.Reducer.mean(),
-            geometry=point,
-            scale=1000,
-            maxPixels=1e9
-        )
-
-        rainfall_mm = result.get('precipitationCal')
-        
-        # Check if value is valid
-        if rainfall_mm is None:
-            return 0.0
-        return rainfall_mm.getInfo()
-    except Exception as e:
-        st.error(f"[GEE ERROR] {e}")
-        return 0.0
 
 
 # === STREAMLIT UI ===
