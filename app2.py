@@ -78,7 +78,6 @@ lat, lon = districts[selected_district]
 st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
 
 # Get real-time values
-rainfall = get_daily_rainfall_gee(lat=lat, lon=lon, date_str=str(selected_date))
 rainfall_mm = get_openweather_rainfall(lat, lon)
 rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
