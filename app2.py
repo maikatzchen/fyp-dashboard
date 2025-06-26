@@ -68,7 +68,7 @@ def get_daily_rainfall_gee(lat, lon, date_input, use_early_run=True):
         dataset = ee.ImageCollection("NASA/GPM_L3/IMERG_V06") \
         .filter(ee.Filter.eq('status', 'early'))
 
-            .filterDate(start_date, end_date) \
+        .filterDate(start_date, end_date) \
             .select('precipitationCal')
 
         daily_precip = dataset.sum()
