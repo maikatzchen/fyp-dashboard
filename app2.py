@@ -37,15 +37,16 @@ def get_openweather_rainfall(lat, lon):
 # === FUNCTION: Get 3-day rainfall from GEE ===
 def get_gee_3day_rainfall(lat, lon, end_date):
     start_date = end_date - datetime.timedelta(days=3)
-    point = ee.Geometry.Point(lon, lat)
+    region = ee.Geometry.Point(lon, lat).buffer(5000)  # 🔧 Apply 5km buffer
     dataset = ee.ImageCollection("NASA/GPM_L3/IMERG_V06") \
         .filterDate(str(start_date), str(end_date)) \
         .select("precipitationCal")
     rainfall_image = dataset.sum()
     rainfall_mm = rainfall_image.reduceRegion(
         reducer=ee.Reducer.mean(),
-        geometry=point,
-        scale=10000
+        geometry=region,  # 🔧 Use buffered region
+        scale=10000,
+        maxPixels=1e9
     ).get("precipitationCal")
     try:
         return rainfall_mm.getInfo()
@@ -62,7 +63,7 @@ def get_daily_rainfall_gee(lat, lon, date_input, use_early_run=True):
 
         start_date = ee.Date(date_obj.strftime('%Y-%m-%d'))
         end_date = start_date.advance(1, 'day')
-        point = ee.Geometry.Point([lon, lat])
+        region = ee.Geometry.Point([lon, lat]).buffer(5000)  # 🔧 Apply 5km buffer
 
         dataset = (
             ee.ImageCollection("NASA/GPM_L3/IMERG_V06")
@@ -74,12 +75,11 @@ def get_daily_rainfall_gee(lat, lon, date_input, use_early_run=True):
         daily_precip = dataset.sum()
         result = daily_precip.reduceRegion(
             reducer=ee.Reducer.mean(),
-            geometry=point,
-            scale=1000,
+            geometry=region,  # 🔧 Use buffered region
+            scale=10000,
             maxPixels=1e9
         )
 
-        # Get dictionary safely
         result_dict = result.getInfo()
         return result_dict.get('precipitationCal', 0.0)
 
