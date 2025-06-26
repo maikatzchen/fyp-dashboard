@@ -149,26 +149,29 @@ def get_nasa_power_rainfall(lat, lon, date_obj):
         response = requests.get(url)
         data = response.json()
 
-        # Debugging output
-        st.write("🔍 Raw NASA POWER response:")
+        # Show full response for debugging
+        st.write("🔍 NASA POWER full response:")
         st.json(data)
 
-        if "properties" in data:
-            rainfall = (
-                data["properties"]
-                    .get("parameter", {})
-                    .get("PRECTOT", {})
-                    .get(date_str, 0.0)
-            )
-            return float(rainfall)
-        else:
-            st.warning("NASA POWER did not return 'properties'. Message:")
-            st.write(data.get("messages", "No error message returned."))
+        # Safely check if 'properties' exists
+        if "properties" not in data:
+            error_msg = data.get("messages", "No error message from API.")
+            st.warning(f"⚠️ 'properties' not in response. NASA POWER says: {error_msg}")
             return 0.0
+
+        # Continue only if 'PRECTOT' exists
+        parameter = data["properties"].get("parameter", {})
+        prectot = parameter.get("PRECTOT", {})
+
+        if date_str not in prectot:
+            st.warning(f"⚠️ No rainfall data for {date_str} at this location.")
+            return 0.0
+
+        return float(prectot[date_str])
+
     except Exception as e:
         st.error(f"[NASA POWER Error] {e}")
         return 0.0
-
 
 
 # === STREAMLIT UI ===
