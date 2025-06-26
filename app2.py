@@ -2,7 +2,8 @@
 
 import streamlit as st
 import requests
-import datetime
+import datetime 
+from datetime import date
 import ee
 from google.oauth2 import service_account
 
@@ -52,6 +53,30 @@ def get_gee_3day_rainfall(lat, lon, end_date):
     except:
         return 0.0
 
+# === FUNCTION: Get Daily rainfall from GEE ===
+def get_daily_rainfall_gee(lat, lon, date_str):
+    import datetime
+    date = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+    start_date = ee.Date(date.strftime('%Y-%m-%d'))
+    end_date = start_date.advance(1, 'day')
+
+    point = ee.Geometry.Point([lon, lat])
+
+    dataset = ee.ImageCollection('NASA/GPM_L3/IMERG_V06') \
+        .filterDate(start_date, end_date) \
+        .select('precipitationCal')
+
+    daily_precip = dataset.sum()
+
+    rainfall_mm = daily_precip.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=point,
+        scale=1000,
+        maxPixels=1e9
+    ).get('precipitationCal')
+
+    return rainfall_mm.getInfo()
+
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
 st.title("🌧️ Flood Prediction Dashboard")
@@ -69,18 +94,18 @@ selected_date = st.sidebar.date_input("Select a date", datetime.date.today())
 selected_district = st.sidebar.selectbox("Select a district", list(districts.keys()))
 lat, lon = districts[selected_district]
 
-
-
 # === Real-Time Weather Panel ===
 st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
 
 # Get real-time values
+rainfall = get_daily_rainfall_gee(lat=lat, lon=lon, date_str=str(selected_date))
 rainfall_mm = get_openweather_rainfall(lat, lon)
 rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 col1.metric("Today's Hourly Rainfall (mm)", f"{rainfall_mm:.2f}")
 col2.metric("3-Day Rainfall (mm)", f"{rainfall_3d:.2f}")
+col3.metric("Rainfall (mm)", f"{rainfall:.2f}")
 
 # === Optional Map (showing location) ===
 st.map(data={"lat": [lat], "lon": [lon]})
