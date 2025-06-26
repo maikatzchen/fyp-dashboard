@@ -196,7 +196,7 @@ st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
 
 # Get real-time values
 rainfall_mm = get_openweather_rainfall(lat, lon)
-rainfall_daily = getl_nasa_power_rainfall(lat, lon, selected_date)
+rainfall_daily = get_nasa_power_rainfall(lat, lon, selected_date)
 rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
 col1, col2, col3 = st.columns(3)
