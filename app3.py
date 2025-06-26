@@ -137,25 +137,28 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         return 0.0
 
 # === FUNCTION: Get daily rainfall from NASA POWER ===
-def get_daily_rainfall_nasa_power(lat, lon, date_obj):
+def get_nasa_power_rainfall(lat, lon, date_obj):
     try:
         date_str = date_obj.strftime("%Y%m%d")
-        url = f"https://power.larc.nasa.gov/api/temporal/daily/point"
-        params = {
-            "parameters": "PRECTOT",
-            "start": date_str,
-            "end": date_str,
-            "latitude": lat,
-            "longitude": lon,
-            "format": "JSON"
-        }
-        response = requests.get(url, params=params)
+        url = (
+            f"https://power.larc.nasa.gov/api/temporal/daily/point"
+            f"?start={date_str}&end={date_str}"
+            f"&latitude={lat}&longitude={lon}"
+            f"&community=ag&parameters=PRECTOT&format=JSON"
+        )
+        response = requests.get(url)
         data = response.json()
-        value = data['properties']['parameter']['PRECTOT'][date_str]
-        return float(value)
+
+        # Check if the expected keys exist
+        rainfall = data.get("properties", {}) \
+                       .get("parameter", {}) \
+                       .get("PRECTOT", {}) \
+                       .get(date_str, 0.0)
+        return float(rainfall)
     except Exception as e:
         st.error(f"[NASA POWER Error] {e}")
         return 0.0
+
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
