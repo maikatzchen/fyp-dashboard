@@ -72,15 +72,12 @@ def get_daily_rainfall_gee(lat, lon, date_input):
             .select('precipitationCal')
         )
 
-        # Debug image count
         image_count = dataset.size().getInfo()
         st.write(f"IMERG image count for {date_obj.date()}: {image_count}")
 
-        # Aggregate rainfall
         daily_precip = dataset.sum()
-
         result = daily_precip.reduceRegion(
-            reducer=ee.Reducer.mean(),  # Optional: use .sum() if you want total mm over the area
+            reducer=ee.Reducer.mean(),
             geometry=region,
             scale=10000,
             maxPixels=1e9
@@ -88,14 +85,50 @@ def get_daily_rainfall_gee(lat, lon, date_input):
 
         result_dict = result.getInfo()
         st.write("Daily result (raw):", result_dict)
+        rainfall = result_dict.get('precipitationCal', 0.0)
 
-        return result_dict.get('precipitationCal', 0.0)
+        # Use fallback if IMERG has 0.0
+        if rainfall == 0.0:
+            st.warning("IMERG daily rainfall is 0.0 or unavailable. Switching to CHIRPS backup...")
+            rainfall = get_daily_rainfall_chirps(lat, lon, date_input)
+
+        return rainfall
 
     except Exception as e:
         st.error(f"[GEE Error] {e}")
+        st.warning("Switching to CHIRPS as fallback...")
+        return get_daily_rainfall_chirps(lat, lon, date_input)
+
+# === BACKUP: Get Daily rainfall from CHIRPS ===
+def get_daily_rainfall_chirps(lat, lon, date_input):
+    try:
+        if isinstance(date_input, datetime.date):
+            date_obj = datetime.datetime.combine(date_input, datetime.time())
+        else:
+            date_obj = datetime.datetime.strptime(date_input, '%Y-%m-%d')
+
+        start_date = ee.Date(date_obj.strftime('%Y-%m-%d'))
+        end_date = start_date.advance(1, 'day')
+        region = ee.Geometry.Point([lon, lat]).buffer(10000)
+
+        dataset = ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY") \
+            .filterDate(start_date, end_date) \
+            .select("precipitation")
+
+        daily_precip = dataset.sum()
+        result = daily_precip.reduceRegion(
+            reducer=ee.Reducer.mean(),
+            geometry=region,
+            scale=5000,
+            maxPixels=1e9
+        )
+
+        result_dict = result.getInfo()
+        return result_dict.get("precipitation", 0.0)
+
+    except Exception as e:
+        st.error(f"[CHIRPS Error] {e}")
         return 0.0
-
-
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
