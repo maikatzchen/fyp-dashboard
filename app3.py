@@ -136,44 +136,6 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         st.error(f"[CHIRPS Error] {e}")
         return 0.0
 
-# === FUNCTION: Get daily rainfall from NASA POWER ===
-def get_nasa_power_rainfall(lat, lon, date_obj):
-    try:
-        date_str = date_obj.strftime("%Y%m%d")
-        url = (
-            f"https://power.larc.nasa.gov/api/temporal/daily/point"
-            f"?start={date_str}&end={date_str}"
-            f"&latitude={lat}&longitude={lon}"
-            f"&community=ag&parameters=PRECTOT&format=JSON"
-        )
-        response = requests.get(url)
-        data = response.json()
-
-        # Show full response for debugging
-        st.write("🔍 NASA POWER full response:")
-        st.json(data)
-
-        # Safely check if 'properties' exists
-        if "properties" not in data:
-            error_msg = data.get("messages", "No error message from API.")
-            st.warning(f"⚠️ 'properties' not in response. NASA POWER says: {error_msg}")
-            return 0.0
-
-        # Continue only if 'PRECTOT' exists
-        parameter = data["properties"].get("parameter", {})
-        prectot = parameter.get("PRECTOT", {})
-
-        if date_str not in prectot:
-            st.warning(f"⚠️ No rainfall data for {date_str} at this location.")
-            return 0.0
-
-        return float(prectot[date_str])
-
-    except Exception as e:
-        st.error(f"[NASA POWER Error] {e}")
-        return 0.0
-
-
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
 st.title("🌧️ Flood Prediction Dashboard")
@@ -196,13 +158,13 @@ st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
 
 # Get real-time values
 rainfall_mm = get_openweather_rainfall(lat, lon)
-rainfall_daily = get_nasa_power_rainfall(lat, lon, selected_date)
+rainfall_daily, source = get_daily_rainfall_gee(lat, lon, date_input)
 rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
 col1, col2, col3 = st.columns(3)
 col1.metric("Today's Hourly Rainfall (mm)", f"{rainfall_mm:.2f}")
 col2.metric("3-Day Rainfall (mm)", f"{rainfall_3d:.2f}")
-col3.metric(f"Today's Rainfall (mm)", f"{rainfall_daily:.2f}")
+col3.metric(f"Today's Rainfall (mm) [{source}]", f"{rainfall_daily:.2f}")
 
 # === Optional Map (showing location) ===
 st.map(data={"lat": [lat], "lon": [lon]})
