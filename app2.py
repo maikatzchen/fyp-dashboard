@@ -18,7 +18,6 @@ initialize_ee()
 # === CONFIGURATION ===
 OPENWEATHER_API_KEY = "0ddef092786b6f1881790a638a583445"  
 
-
 # === FUNCTION: Get 1-hour rainfall from OpenWeatherMap ===
 def get_openweather_rainfall(lat, lon):
     url = "https://api.openweathermap.org/data/2.5/weather"
@@ -54,7 +53,35 @@ def get_gee_3day_rainfall(lat, lon, end_date):
         return 0.0
 
 # === FUNCTION: Get Daily rainfall from GEE ===
+def get_daily_rainfall_gee(lat, lon, date_str, use_early_run=True):
+    try:
+        date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+        start_date = ee.Date(date_obj.strftime('%Y-%m-%d'))
+        end_date = start_date.advance(1, 'day')
+        point = ee.Geometry.Point([lon, lat])
 
+        # Choose dataset
+        dataset_id = 'NASA/GPM_L3/IMERG_V06_Early' if use_early_run else 'NASA/GPM_L3/IMERG_V06'
+        dataset = ee.ImageCollection(dataset_id) \
+            .filterDate(start_date, end_date) \
+            .select('precipitationCal')
+
+        daily_precip = dataset.sum()
+        result = daily_precip.reduceRegion(
+            reducer=ee.Reducer.mean(),
+            geometry=point,
+            scale=1000,
+            maxPixels=1e9
+        )
+
+        rainfall_mm = result.get('precipitationCal')
+        if rainfall_mm is None:
+            return 0.0
+        return rainfall_mm.getInfo()
+
+    except Exception as e:
+        st.error(f"[GEE Error] {e}")
+        return 0.0
 
 
 # === STREAMLIT UI ===
@@ -79,11 +106,13 @@ st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
 
 # Get real-time values
 rainfall_mm = get_openweather_rainfall(lat, lon)
+rainfall_daily = get_daily_rainfall_gee(lat,lon, date_str)
 rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
-col1, col2 = st.columns(2)
+col1, col3 = st.columns(3)
 col1.metric("Today's Hourly Rainfall (mm)", f"{rainfall_mm:.2f}")
 col2.metric("3-Day Rainfall (mm)", f"{rainfall_3d:.2f}")
+col3.metric("Today's Rainfall (mm)", f"{rainfall_daily:.2f}")
 
 # === Optional Map (showing location) ===
 st.map(data={"lat": [lat], "lon": [lon]})
