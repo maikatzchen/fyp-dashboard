@@ -37,14 +37,14 @@ def get_openweather_rainfall(lat, lon):
 # === FUNCTION: Get 3-day rainfall from GEE ===
 def get_gee_3day_rainfall(lat, lon, end_date):
     start_date = end_date - datetime.timedelta(days=3)
-    region = ee.Geometry.Point(lon, lat).buffer(5000)  # 🔧 Apply 5km buffer
+    region = ee.Geometry.Point(lon, lat).buffer(10000)  # ✅ 10 km buffer
     dataset = ee.ImageCollection("NASA/GPM_L3/IMERG_V06") \
         .filterDate(str(start_date), str(end_date)) \
         .select("precipitationCal")
     rainfall_image = dataset.sum()
     rainfall_mm = rainfall_image.reduceRegion(
         reducer=ee.Reducer.mean(),
-        geometry=region,  # 🔧 Use buffered region
+        geometry=region,
         scale=10000,
         maxPixels=1e9
     ).get("precipitationCal")
@@ -53,8 +53,9 @@ def get_gee_3day_rainfall(lat, lon, end_date):
     except:
         return 0.0
 
+
 # === FUNCTION: Get Daily rainfall from GEE ===
-def get_daily_rainfall_gee(lat, lon, date_input, use_early_run=True):
+def get_daily_rainfall_gee(lat, lon, date_input):
     try:
         if isinstance(date_input, datetime.date):
             date_obj = datetime.datetime.combine(date_input, datetime.time())
@@ -63,24 +64,31 @@ def get_daily_rainfall_gee(lat, lon, date_input, use_early_run=True):
 
         start_date = ee.Date(date_obj.strftime('%Y-%m-%d'))
         end_date = start_date.advance(1, 'day')
-        region = ee.Geometry.Point([lon, lat]).buffer(5000)  # 🔧 Apply 5km buffer
+        region = ee.Geometry.Point([lon, lat]).buffer(10000)  # ✅ 10 km buffer
 
         dataset = (
             ee.ImageCollection("NASA/GPM_L3/IMERG_V06")
-            .filter(ee.Filter.eq('status', 'early' if use_early_run else 'final'))
             .filterDate(start_date, end_date)
             .select('precipitationCal')
         )
 
+        # Debug image count
+        image_count = dataset.size().getInfo()
+        st.write(f"IMERG image count for {date_obj.date()}: {image_count}")
+
+        # Aggregate rainfall
         daily_precip = dataset.sum()
+
         result = daily_precip.reduceRegion(
-            reducer=ee.Reducer.mean(),
-            geometry=region,  # 🔧 Use buffered region
+            reducer=ee.Reducer.mean(),  # Optional: use .sum() if you want total mm over the area
+            geometry=region,
             scale=10000,
             maxPixels=1e9
         )
 
         result_dict = result.getInfo()
+        st.write("Daily result (raw):", result_dict)
+
         return result_dict.get('precipitationCal', 0.0)
 
     except Exception as e:
