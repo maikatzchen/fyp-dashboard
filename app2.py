@@ -65,8 +65,9 @@ def get_daily_rainfall_gee(lat, lon, date_input, use_early_run=True):
         end_date = start_date.advance(1, 'day')
         point = ee.Geometry.Point([lon, lat])
 
-        dataset_id = 'NASA/GPM_L3/IMERG_V06_Early' if use_early_run else 'NASA/GPM_L3/IMERG_V06'
-        dataset = ee.ImageCollection(dataset_id) \
+        dataset = ee.ImageCollection("NASA/GPM_L3/IMERG_V06") \
+        .filter(ee.Filter.eq('status', 'early'))
+
             .filterDate(start_date, end_date) \
             .select('precipitationCal')
 
