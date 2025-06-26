@@ -89,8 +89,8 @@ def get_daily_rainfall_gee(lat, lon, date_input):
 
         # Use fallback if IMERG has 0.0
         if rainfall == 0.0:
-        st.warning("IMERG daily rainfall is 0.0 or unavailable. Switching to CHIRPS backup...")
-        return get_daily_rainfall_chirps(lat, lon, date_input)  # ✅ returns tuple (value, source)
+            st.warning("IMERG daily rainfall is 0.0 or unavailable. Switching to CHIRPS backup...")
+            return get_daily_rainfall_chirps(lat, lon, date_input)  # ✅ returns tuple (value, source)
 
 
         return rainfall, "IMERG"
