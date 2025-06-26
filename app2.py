@@ -53,14 +53,18 @@ def get_gee_3day_rainfall(lat, lon, end_date):
         return 0.0
 
 # === FUNCTION: Get Daily rainfall from GEE ===
-def get_daily_rainfall_gee(lat, lon, date_str, use_early_run=True):
+def get_daily_rainfall_gee(lat, lon, date_input, use_early_run=True):
     try:
-        date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+        # Accept both str and datetime.date
+        if isinstance(date_input, datetime.date):
+            date_obj = datetime.datetime.combine(date_input, datetime.time())
+        else:
+            date_obj = datetime.datetime.strptime(date_input, '%Y-%m-%d')
+
         start_date = ee.Date(date_obj.strftime('%Y-%m-%d'))
         end_date = start_date.advance(1, 'day')
         point = ee.Geometry.Point([lon, lat])
 
-        # Choose dataset
         dataset_id = 'NASA/GPM_L3/IMERG_V06_Early' if use_early_run else 'NASA/GPM_L3/IMERG_V06'
         dataset = ee.ImageCollection(dataset_id) \
             .filterDate(start_date, end_date) \
