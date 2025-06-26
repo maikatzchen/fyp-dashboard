@@ -1,4 +1,5 @@
 # app.py
+# for testing purpose using IMERG and CHIRPS data with error display for debugging 
 
 import streamlit as st
 import requests
