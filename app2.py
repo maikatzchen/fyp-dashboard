@@ -79,7 +79,7 @@ def get_daily_rainfall_gee(lat, lon, date_input, use_early_run=True):
         )
 
         if 'precipitationCal' in result.getInfo():
-        return result.get('precipitationCal').getInfo()
+            return result.get('precipitationCal').getInfo()
     else:
     return 0.0
 
