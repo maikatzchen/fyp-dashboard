@@ -54,7 +54,7 @@ def get_gee_3day_rainfall(lat, lon, end_date):
             st.warning("IMERG 3-day rainfall is 0.0 or unavailable. Switching to CHIRPS backup...")
             return get_3day_rainfall_chirps(lat, lon, end_date)
 
-        return rainfall
+    return rainfall
     except Exception as e:
         st.error(f"[GEE Error - IMERG 3-Day] {e}")
         return get_3day_rainfall_chirps(lat, lon, end_date)
