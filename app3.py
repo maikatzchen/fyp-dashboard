@@ -90,9 +90,9 @@ def get_daily_rainfall_gee(lat, lon, date_input):
         # Use fallback if IMERG has 0.0
         if rainfall == 0.0:
             st.warning("IMERG daily rainfall is 0.0 or unavailable. Switching to CHIRPS backup...")
-            rainfall = get_daily_rainfall_chirps(lat, lon, date_input)
+            rainfall = get_daily_rainfall_chirps(lat, lon, date_input), "CHIRPS"
 
-        return rainfall
+        return rainfall, "IMERG"
 
     except Exception as e:
         st.error(f"[GEE Error] {e}")
@@ -114,6 +114,10 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         dataset = ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY") \
             .filterDate(start_date, end_date) \
             .select("precipitation")
+        
+        image_count = dataset.size().getInfo()
+        st.write(f"CHIRPS image count for {date_obj.date()}: {image_count}")
+
 
         daily_precip = dataset.sum()
         result = daily_precip.reduceRegion(
@@ -124,7 +128,8 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         )
 
         result_dict = result.getInfo()
-        return result_dict.get("precipitation", 0.0)
+        st.write("CHIRPS daily result (raw):", result_dict)
+        return result_dict.get("precipitation", 0.0), "CHIRPS"
 
     except Exception as e:
         st.error(f"[CHIRPS Error] {e}")
