@@ -55,7 +55,6 @@ def get_gee_3day_rainfall(lat, lon, end_date):
 # === FUNCTION: Get Daily rainfall from GEE ===
 def get_daily_rainfall_gee(lat, lon, date_input, use_early_run=True):
     try:
-        # Accept both str and datetime.date
         if isinstance(date_input, datetime.date):
             date_obj = datetime.datetime.combine(date_input, datetime.time())
         else:
@@ -65,10 +64,12 @@ def get_daily_rainfall_gee(lat, lon, date_input, use_early_run=True):
         end_date = start_date.advance(1, 'day')
         point = ee.Geometry.Point([lon, lat])
 
-        dataset = ee.ImageCollection("NASA/GPM_L3/IMERG_V06") \
-        .filter(ee.Filter.eq('status', 'early')) \
-        .filterDate(start_date, end_date) \
+        dataset = (
+            ee.ImageCollection("NASA/GPM_L3/IMERG_V06")
+            .filter(ee.Filter.eq('status', 'early' if use_early_run else 'final'))
+            .filterDate(start_date, end_date)
             .select('precipitationCal')
+        )
 
         daily_precip = dataset.sum()
         result = daily_precip.reduceRegion(
@@ -78,15 +79,14 @@ def get_daily_rainfall_gee(lat, lon, date_input, use_early_run=True):
             maxPixels=1e9
         )
 
-        if 'precipitationCal' in result.getInfo():
-            return result.get('precipitationCal').getInfo()
-    else:
-    return 0.0
-
+        # Get dictionary safely
+        result_dict = result.getInfo()
+        return result_dict.get('precipitationCal', 0.0)
 
     except Exception as e:
         st.error(f"[GEE Error] {e}")
         return 0.0
+
 
 
 # === STREAMLIT UI ===
