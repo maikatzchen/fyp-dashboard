@@ -35,32 +35,37 @@ def get_openweather_rainfall(lat, lon):
         return 0.0
 
 # === FUNCTION: Get 3-day rainfall from GEE ===
+# === FUNCTION: Get 3-day rainfall from GEE ===
 def get_gee_3day_rainfall(lat, lon, end_date):
-    start_date = end_date - datetime.timedelta(days=3)
-    region = ee.Geometry.Point(lon, lat).buffer(10000)  # ✅ 10 km buffer
-    dataset = ee.ImageCollection("NASA/GPM_L3/IMERG_V06") \
-        .filterDate(str(start_date), str(end_date)) \
-        .select("precipitationCal")
-    rainfall_image = dataset.sum()
-    rainfall_mm = rainfall_image.reduceRegion(
-        reducer=ee.Reducer.mean(),
-        geometry=region,
-        scale=10000,
-        maxPixels=1e9
-     )
+    try:
+        start_date = end_date - datetime.timedelta(days=3)
+        region = ee.Geometry.Point(lon, lat).buffer(10000)  # ✅ 10 km buffer
 
-    result_dict = result.getInfo()
-    rainfall = result_dict.get("precipitationCal", 0.0)
+        dataset = ee.ImageCollection("NASA/GPM_L3/IMERG_V06") \
+            .filterDate(str(start_date), str(end_date)) \
+            .select("precipitationCal")
 
-    if rainfall == 0.0:
-        st.warning("IMERG 3-day rainfall is 0.0 or unavailable. Switching to CHIRPS backup...")
-        return get_3day_rainfall_chirps(lat, lon, end_date)
+        rainfall_image = dataset.sum()
+        result = rainfall_image.reduceRegion(
+            reducer=ee.Reducer.mean(),
+            geometry=region,
+            scale=10000,
+            maxPixels=1e9
+        )
+
+        result_dict = result.getInfo()
+        rainfall = result_dict.get("precipitationCal", 0.0)
+
+        if rainfall == 0.0:
+            st.warning("IMERG 3-day rainfall is 0.0 or unavailable. Switching to CHIRPS backup...")
+            return get_3day_rainfall_chirps(lat, lon, end_date)
 
         return rainfall
 
     except Exception as e:
         st.error(f"[GEE Error - IMERG 3-Day] {e}")
         return get_3day_rainfall_chirps(lat, lon, end_date)
+
 
 # === BACKUP: Get 3-day rainfall from CHIRPS ===
 def get_3day_rainfall_chirps(lat, lon, end_date):
