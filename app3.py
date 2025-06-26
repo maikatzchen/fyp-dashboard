@@ -137,27 +137,21 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         return 0.0
 
 # === FUNCTION: Get daily rainfall from NASA POWER ===
-def get_nasa_power_rainfall(lat, lon, date_obj):
+def debug_nasa_power_response(lat, lon, date_obj):
+    date_str = date_obj.strftime("%Y%m%d")
+    url = (
+        f"https://power.larc.nasa.gov/api/temporal/daily/point"
+        f"?start={date_str}&end={date_str}"
+        f"&latitude={lat}&longitude={lon}"
+        f"&community=ag&parameters=PRECTOT&format=JSON"
+    )
+    response = requests.get(url)
     try:
-        date_str = date_obj.strftime("%Y%m%d")
-        url = (
-            f"https://power.larc.nasa.gov/api/temporal/daily/point"
-            f"?start={date_str}&end={date_str}"
-            f"&latitude={lat}&longitude={lon}"
-            f"&community=ag&parameters=PRECTOT&format=JSON"
-        )
-        response = requests.get(url)
         data = response.json()
-
-        # Check if the expected keys exist
-        rainfall = data.get("properties", {}) \
-                       .get("parameter", {}) \
-                       .get("PRECTOT", {}) \
-                       .get(date_str, 0.0)
-        return float(rainfall)
+        st.write("🔍 Full NASA POWER JSON response:")
+        st.json(data)  # ✅ this will show us the whole structure
     except Exception as e:
-        st.error(f"[NASA POWER Error] {e}")
-        return 0.0
+        st.error(f"[JSON Parse Error] {e}")
 
 
 # === STREAMLIT UI ===
@@ -182,7 +176,7 @@ st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
 
 # Get real-time values
 rainfall_mm = get_openweather_rainfall(lat, lon)
-rainfall_daily = get_daily_rainfall_nasa_power(lat,lon, selected_date)
+rainfall_daily = debug_nasa_power_response(lat, lon, selected_date)
 rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
 col1, col2, col3 = st.columns(3)
