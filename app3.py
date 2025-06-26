@@ -47,11 +47,43 @@ def get_gee_3day_rainfall(lat, lon, end_date):
         geometry=region,
         scale=10000,
         maxPixels=1e9
-    ).get("precipitationCal")
+     )
+
+        rainfall = result.get("precipitationCal").getInfo()
+        if rainfall == 0.0:
+            st.warning("IMERG 3-day rainfall is 0.0 or unavailable. Switching to CHIRPS backup...")
+            return get_3day_rainfall_chirps(lat, lon, end_date)
+
+        return rainfall
+    except Exception as e:
+        st.error(f"[GEE Error - IMERG 3-Day] {e}")
+        return get_3day_rainfall_chirps(lat, lon, end_date)
+
+# === BACKUP: Get 3-day rainfall from CHIRPS ===
+def get_3day_rainfall_chirps(lat, lon, end_date):
     try:
-        return rainfall_mm.getInfo()
-    except:
+        start_date = end_date - datetime.timedelta(days=3)
+        region = ee.Geometry.Point(lon, lat).buffer(10000)
+
+        dataset = ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY") \
+            .filterDate(str(start_date), str(end_date)) \
+            .select("precipitation")
+
+        rainfall_image = dataset.sum()
+        result = rainfall_image.reduceRegion(
+            reducer=ee.Reducer.mean(),
+            geometry=region,
+            scale=5000,
+            maxPixels=1e9
+        )
+
+        result_dict = result.getInfo()
+        st.write("CHIRPS 3-day result (raw):", result_dict)
+        return result_dict.get("precipitation", 0.0)
+    except Exception as e:
+        st.error(f"[CHIRPS Error - 3-Day] {e}")
         return 0.0
+
 
 
 # === FUNCTION: Get Daily rainfall from GEE ===
