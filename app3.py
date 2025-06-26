@@ -1,5 +1,5 @@
 # app.py
-# for testing purpose using IMERG and CHIRPS data with error display for debugging 
+# for testing purpose using IMERG and CHIRPS as fallback with error display for debugging 
 
 import streamlit as st
 import requests
@@ -35,7 +35,6 @@ def get_openweather_rainfall(lat, lon):
     except:
         return 0.0
 
-# === FUNCTION: Get 3-day rainfall from GEE ===
 # === FUNCTION: Get 3-day rainfall from GEE ===
 def get_gee_3day_rainfall(lat, lon, end_date):
     try:
@@ -132,7 +131,6 @@ def get_daily_rainfall_gee(lat, lon, date_input):
         if rainfall == 0.0:
             st.warning("IMERG daily rainfall is 0.0 or unavailable. Switching to CHIRPS backup...")
             return get_daily_rainfall_chirps(lat, lon, date_input)  # ✅ returns tuple (value, source)
-
 
         return rainfall, "IMERG"
 
