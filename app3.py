@@ -21,7 +21,7 @@ OPENWEATHER_API_KEY = "0ddef092786b6f1881790a638a583445"
 
 # === FUNCTION: Get 1-hour rainfall from OpenWeatherMap ===
 def get_openweather_rainfall(lat, lon):
-    url = "https://api.openweathermap.org/data/2.5/weather"
+    url = "https://api.openweathermap.org/data/2.5/forecast"
     params = {
         "lat": lat,
         "lon": lon,
@@ -32,26 +32,26 @@ def get_openweather_rainfall(lat, lon):
     data = response.json()
 
     today = datetime.datetime.utcnow().date()
-rainfall_today = 0.0
-rainfall_3d = 0.0
+    rainfall_today = 0.0
+    rainfall_3d = 0.0
 
-for entry in data["list"]:
-    dt = datetime.datetime.fromtimestamp(entry["dt"])
-    rain = entry.get("rain", {}).get("3h", 0.0)
+    for entry in data.get("list", []):
+        dt = datetime.datetime.fromtimestamp(entry["dt"])
+        rain = entry.get("rain", {}).get("3h", 0.0)
 
-    if dt.date() == today:
-        rainfall_today += rain
-    if dt <= datetime.datetime.utcnow() + datetime.timedelta(days=3):
-        rainfall_3d += rain
+        # Sum today's rain
+        if dt.date() == today:
+            rainfall_today += rain
 
-print(f"🌧️ Today's Rainfall: {rainfall_today:.2f} mm")
-print(f"🌧️ 3-Day Rainfall: {rainfall_3d:.2f} mm")
+        # Sum 3-day rain
+        if dt <= datetime.datetime.utcnow() + datetime.timedelta(days=3):
+            rainfall_3d += rain
 
-try:
-        return data["rain"].get("1h", 0.0)
-except:
-        return 0.0
+    print(f"🌧️ Today's Rainfall: {rainfall_today:.2f} mm")
+    print(f"🌧️ 3-Day Rainfall: {rainfall_3d:.2f} mm")
 
+    return rainfall_today, rainfall_3d
+    
 # === FUNCTION: Get 3-day rainfall from GEE ===
 def get_gee_3day_rainfall(lat, lon, end_date):
     try:
