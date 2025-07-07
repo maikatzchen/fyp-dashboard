@@ -49,7 +49,7 @@ print(f"🌧️ 3-Day Rainfall: {rainfall_3d:.2f} mm")
 
 try:
         return data["rain"].get("1h", 0.0)
-    except:
+except:
         return 0.0
 
 # === FUNCTION: Get 3-day rainfall from GEE ===
