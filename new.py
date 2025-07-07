@@ -22,6 +22,11 @@ def get_tomorrowio_rainfall(lat, lon):
             "accept": "application/json",
             "apikey": TOMORROW_API_KEY
         }
+        # Format ISO8601 timestamps
+        now = datetime.datetime.utcnow()
+        start_time = now.isoformat() + "Z"
+        end_time = (now + datetime.timedelta(days=3)).isoformat() + "Z"
+
         payload = {
             "location": f"{lat},{lon}",
             "fields": ["precipitationAmount"],
@@ -36,11 +41,18 @@ def get_tomorrowio_rainfall(lat, lon):
 
         st.write("Tomorrow.io raw response:", response.json())
 
-        data = response.json()
+        timelines = data.get("data", {}).get("timelines", [])
+        if not timelines:
+            st.warning("No timelines data found.")
+            return 0.0, 0.0
 
-        intervals = data["data"]["timelines"][0]["intervals"]
-        daily_rainfall = intervals[0]["values"]["precipitationAmount"]
-        rainfall_3d = sum(i["values"]["precipitationAmount"] for i in intervals)
+        intervals = timelines[0].get("intervals", [])
+        if not intervals:
+            st.warning("No intervals data found.")
+            return 0.0, 0.0
+
+        daily_rainfall = intervals[0]["values"].get("precipitationAmount", 0.0)
+        rainfall_3d = sum(i["values"].get("precipitationAmount", 0.0) for i in intervals)
 
         return daily_rainfall, rainfall_3d
 
