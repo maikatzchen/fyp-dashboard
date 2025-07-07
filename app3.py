@@ -7,6 +7,8 @@ import datetime
 from datetime import date
 import ee
 from google.oauth2 import service_account
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # === LOAD GEE CREDENTIALS FROM STREAMLIT SECRETS ===
 def initialize_ee():
@@ -181,8 +183,8 @@ def get_infobanjir_rainfall(lat, lon):
     try:
         stations_url = "https://publicinfobanjir.water.gov.my/api/hujan/stesen"
         readings_url = "https://publicinfobanjir.water.gov.my/api/hujan/bacaan"
-        stations = requests.get(stations_url).json()["data"]
-        readings = requests.get(readings_url).json()["data"]
+        stations = requests.get(stations_url, verify=False).json()["data"]
+        readings = requests.get(readings_url, verify=False).json()["data"]
         # Find nearest station
         nearest = min(
             stations, 
