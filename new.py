@@ -1,6 +1,3 @@
-# app.py
-# Using CHIRPS for satellite fallback + Data.gov.my API for local forecasts
-
 import streamlit as st
 import requests
 import datetime
@@ -18,7 +15,7 @@ TOMORROW_API_KEY = st.secrets["tomorrowio"]["api_key"]
 def get_tomorrowio_rainfall(lat, lon):
     try:
         # Use forecast API (better for free plan)
-        url = "https://api.tomorrow.io/v4/weather/forecast"
+        url = "https://api.tomorrow.io/v4/weather/realtime"
         headers = {
             "accept": "application/json",
             "Authorization": f"Bearer {TOMORROW_API_KEY}"
