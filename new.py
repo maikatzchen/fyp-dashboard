@@ -82,43 +82,32 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         st.error(f"[CHIRPS Error - Daily] {e}")
         return 0.0, "Unavailable"
 
-# DATA.GOV.MY
-@st.cache_data(ttl=600)  # Cache API result for 10 minutes
-def get_rainfall_datagovmy(location, end_date):
-    url = "https://api.data.gov.my/weather/forecast"
-    params = {"location__location_name": location, "limit": 1}
-
-    response = fetch_with_retry(url, params)
-    if response is None:
-        return None, None
-
+# TOMORROW.IO
+TOMORROW_API_KEY = "plmRZoGH98gI1yHUVxzVzgPnvYTSauk7"
+def get_tomorrowio_rainfall(lat, lon):
     try:
+        url = "https://api.tomorrow.io/v4/timelines"
+        params = {
+            "location": f"{lat},{lon}",
+            "fields": "precipitationAmount",
+            "timesteps": "1d",
+            "units": "metric",
+            "startTime": "now",
+            "endTime": "nowPlus3d",
+            "apikey": TOMORROW_API_KEY
+        }
+        response = requests.get(url, params=params)
         data = response.json()
-        if not data or "data" not in data[0]:
-            st.warning(f"No forecast data for {location}.")
-            return None, None
 
-        forecasts = data[0].get("forecast", [])
-        daily_rainfall = None
-        three_day_rainfall = 0.0
+        intervals = data["data"]["timelines"][0]["intervals"]
+        daily_rainfall = intervals[0]["values"]["precipitationAmount"]
+        rainfall_3d = sum(i["values"]["precipitationAmount"] for i in intervals)
 
-        for forecast in forecasts:
-            forecast_date = datetime.datetime.strptime(forecast["forecast_date"], "%Y-%m-%d").date()
-
-            # Daily rainfall for selected date
-            if forecast_date == end_date:
-                daily_rainfall = forecast.get("rainfall", 0.0)
-
-            # Sum rainfall for the last 3 days
-            if end_date - datetime.timedelta(days=3) < forecast_date <= end_date:
-                three_day_rainfall += forecast.get("rainfall", 0.0)
-
-        return daily_rainfall, three_day_rainfall
+        return daily_rainfall, rainfall_3d
 
     except Exception as e:
-        st.error(f"[Data.gov.my Parsing Error] {e}")
-        return None, None
-
+        st.error(f"[Tomorrow.io Error] {e}")
+        return 0.0, 0.0
 
         
 # === STREAMLIT UI ===
@@ -139,12 +128,12 @@ selected_district = st.sidebar.selectbox("Select a district", list(districts.key
 lat, lon = districts[selected_district]
 
 # Get rainfall data
-rainfall_daily, rainfall_3d = get_rainfall_datagovmy(selected_district, selected_date)
+rainfall_daily, rainfall_3d = get_tomorrowio_rainfall(lat, lon)
 
 
 col1, col2 = st.columns(2)
-col1.metric("📅 Daily Rainfall (data.gov.my)", f"{rainfall_daily:.2f} mm" if rainfall_daily else "N/A")
-col2.metric("🌧️ 3-Day Rainfall (data.gov.my)", f"{rainfall_3d:.2f} mm" if rainfall_3d else "N/A")
+col1.metric("🌧️ Daily Rainfall (Tomorrow.io)", f"{rainfall_daily:.2f} mm")
+col2.metric("🌧️ 3-Day Rainfall (Tomorrow.io)", f"{rainfall_3d:.2f} mm")
 
 
 # === Optional Map (showing location) ===
