@@ -2,7 +2,7 @@ streamlit
 pandas
 plotly
 requests
-folium
+streamlit-folium
 geemap
 earthengine-api
 google-auth-oauthlib
