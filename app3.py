@@ -30,6 +30,23 @@ def get_openweather_rainfall(lat, lon):
     }
     response = requests.get(url, params=params)
     data = response.json()
+
+    today = datetime.datetime.utcnow().date()
+rainfall_today = 0.0
+rainfall_3d = 0.0
+
+for entry in data["list"]:
+    dt = datetime.datetime.fromtimestamp(entry["dt"])
+    rain = entry.get("rain", {}).get("3h", 0.0)
+
+    if dt.date() == today:
+        rainfall_today += rain
+    if dt <= datetime.datetime.utcnow() + datetime.timedelta(days=3):
+        rainfall_3d += rain
+
+print(f"🌧️ Today's Rainfall: {rainfall_today:.2f} mm")
+print(f"🌧️ 3-Day Rainfall: {rainfall_3d:.2f} mm")
+
     try:
         return data["rain"].get("1h", 0.0)
     except:
