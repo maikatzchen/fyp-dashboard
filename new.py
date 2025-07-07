@@ -32,8 +32,9 @@ def get_tomorrowio_rainfall(lat, lon):
             "fields": ["precipitationAmount"],
             "units": "metric",
             "timesteps": ["1d"],
-            "startTime": "now",
-            "endTime": "nowPlus3d"
+            "startTime": "star_time",
+            "endTime": end_time,
+            "timezone": "auto"  # Required
         }
         response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
