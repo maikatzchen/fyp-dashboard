@@ -17,49 +17,43 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 TOMORROW_API_KEY = st.secrets["tomorrowio"]["api_key"]
 def get_tomorrowio_rainfall(lat, lon):
     try:
-        url = "https://api.tomorrow.io/v4/weather/realtime"
+        # Use forecast API (better for free plan)
+        url = "https://api.tomorrow.io/v4/weather/forecast"
         headers = {
             "accept": "application/json",
-            "apikey": TOMORROW_API_KEY
+            "Authorization": f"Bearer {TOMORROW_API_KEY}"
         }
-        # Format ISO8601 timestamps
-        now = datetime.datetime.utcnow()
-        start_time = now.isoformat() + "Z"
-        end_time = (now + datetime.timedelta(days=3)).isoformat() + "Z"
+        params = {
+            "location": f"{lat},{lon}"
+        }
 
-        payload = {
-            "location": "3.193,101.686",
-            "fields": ["precipitationIntensity"],
-            "units": "metric",
-            "timesteps": ["1d"],
-            "startTime": "2025-07-07T00:00:00Z",
-            "endTime": "2025-07-14T00:00:00Z",
-            "timezone": "Asia/Kuala_Lumpur"  # Required
-        }
-        response = requests.post(url, json=payload, headers=headers)
+        response = requests.get(url, params=params, headers=headers)
         response.raise_for_status()
         data = response.json()
 
-        st.write("Tomorrow.io raw response:", response.json())
+        st.write("Tomorrow.io raw response:", data)
 
-        timelines = data.get("data", {}).get("timelines", [])
-        if not timelines:
-            st.warning("No timelines data found.")
+        # Extract daily forecasts
+        daily_data = data.get("timelines", {}).get("daily", [])
+        if not daily_data:
+            st.warning("No daily forecast data found.")
             return 0.0, 0.0
 
-        intervals = timelines[0].get("intervals", [])
-        if not intervals:
-            st.warning("No intervals data found.")
-            return 0.0, 0.0
+        # Get daily precipitation amount
+        daily_rainfall = daily_data[0]["values"].get("precipitationAmount", 0.0)
 
-        daily_rainfall = intervals[0]["values"].get("precipitationAmount", 0.0)
-        rainfall_3d = sum(i["values"].get("precipitationAmount", 0.0) for i in intervals)
+        # Sum up 3-day rainfall
+        rainfall_3d = sum(
+            day["values"].get("precipitationAmount", 0.0)
+            for day in daily_data[:3]
+        )
 
         return daily_rainfall, rainfall_3d
 
     except Exception as e:
         st.error(f"[Tomorrow.io Error] {e}")
         return 0.0, 0.0
+
         
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
