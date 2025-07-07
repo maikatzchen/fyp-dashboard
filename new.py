@@ -89,9 +89,17 @@ def get_datagovmy_rainfall(location):
         resp = requests.get(url, params=params)
         if resp.status_code == 200:
             data = resp.json()
-            forecast = data["data"][0]["forecast"][0]
-            rain_chance = forecast.get("chance_of_rain", 0)
-            return rain_chance
+            if "data" in data and len(data["data"]) > 0:
+                forecasts = data["data"][0].get("forecast", [])
+                if forecasts:
+                    rain_chance = forecasts[0].get("chance_of_rain", 0)
+                    return rain_chance
+                else:
+                    st.warning(f"No forecast data available for {location}.")
+                    return None
+            else:
+                st.warning(f"No data found for {location} from API.")
+                return None
         else:
             st.warning(f"data.gov.my API returned {resp.status_code}")
             return None
