@@ -1,4 +1,7 @@
+import streamlit as st
 import requests
+
+st.title("🌤️ Tomorrow.io Forecast Test")
 
 url = "https://api.tomorrow.io/v4/weather/forecast"
 headers = {
@@ -9,5 +12,13 @@ params = {
 }
 
 response = requests.get(url, headers=headers, params=params)
-print(response.status_code)
-print(response.json())
+
+# Display response status
+st.write("Status Code:", response.status_code)
+
+# Display JSON response
+try:
+    data = response.json()
+    st.json(data)
+except Exception as e:
+    st.error(f"Error parsing JSON: {e}")
