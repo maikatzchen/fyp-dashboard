@@ -7,8 +7,6 @@ import datetime
 from datetime import date
 import ee
 from google.oauth2 import service_account
-import urllib3
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # === LOAD GEE CREDENTIALS FROM STREAMLIT SECRETS ===
 def initialize_ee():
@@ -177,25 +175,6 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         st.error(f"[CHIRPS Error] {e}")
         return 0.0
 
-# === FUNCTION: Get rainfall chance from Data.gov.my ===
-def get_datagovmy_rainfall(location):
-    try:
-        url = "https://api.data.gov.my/weather/forecast"
-        params = {"location__location_name": location, "limit": 1}
-        resp = requests.get(url, params=params)
-        if resp.status_code == 200:
-            data = resp.json()
-            forecast = data["data"][0]["forecast"][0]
-            rain_chance = forecast.get("chance_of_rain", 0)
-            return rain_chance
-        else:
-            st.warning(f"data.gov.my API returned {resp.status_code}")
-            return None
-    except Exception as e:
-        st.error(f"[Data.gov.my Error] {e}")
-        return None
-
-
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
 st.title("🌧️ Flood Prediction Dashboard")
@@ -213,20 +192,18 @@ selected_date = st.sidebar.date_input("Select a date", datetime.date.today())
 selected_district = st.sidebar.selectbox("Select a district", list(districts.keys()))
 lat, lon = districts[selected_district]
 
+# === Real-Time Weather Panel ===
+st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
+
 # Get real-time values
-rainfall_govmy = get_datagovmy_rainfall(selected_district)
 rainfall_mm = get_openweather_rainfall(lat, lon)
 rainfall_daily, source = get_daily_rainfall_gee(lat, lon, selected_date)
 rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
 col1, col2, col3 = st.columns(3)
-col1.metric("🌧️ Hourly Rainfall (OpenWeatherMap)", f"{rainfall_hourly:.2f} mm")
-if rainfall_govmy is not None:
-    col2.metric("☔ Rain Chance (Data.gov.my)", f"{rainfall_govmy}%")
-else:
-    col2.metric("☔ Rain Chance (Data.gov.my)", "N/A")
-col3.metric(f"📅 Daily Rainfall ({source_daily})", f"{rainfall_daily:.2f} mm")
-
+col1.metric("Today's Hourly Rainfall (mm)", f"{rainfall_mm:.2f}")
+col2.metric("3-Day Rainfall (mm)", f"{rainfall_3d:.2f}")
+col3.metric(f"Today's Rainfall (mm) [{source}]", f"{rainfall_daily:.2f}")
 
 # === Optional Map (showing location) ===
 st.map(data={"lat": [lat], "lon": [lon]})
