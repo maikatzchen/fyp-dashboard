@@ -14,7 +14,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 # TOMORROW.IO
-TOMORROW_API_KEY = "plmRZoGH98gI1yHUVxzVzgPnvYTSauk7"
+TOMORROW_API_KEY = st.secrets["tomorrowio"]["api_key"]
 def get_tomorrowio_rainfall(lat, lon):
     try:
         url = "https://api.tomorrow.io/v4/timelines"
@@ -29,12 +29,13 @@ def get_tomorrowio_rainfall(lat, lon):
             "timesteps": ["1d"],
             "startTime": "now",
             "endTime": "nowPlus3d"
-
-            st.write("Tomorrow.io raw response:", response.json())
-
         }
         response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
+        data = response.json()
+
+        st.write("Tomorrow.io raw response:", response.json())
+
         data = response.json()
 
         intervals = data["data"]["timelines"][0]["intervals"]
