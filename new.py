@@ -17,7 +17,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 TOMORROW_API_KEY = st.secrets["tomorrowio"]["api_key"]
 def get_tomorrowio_rainfall(lat, lon):
     try:
-        url = "https://api.tomorrow.io/v4/timelines"
+        url = "https://api.tomorrow.io/v4/weather/realtime"
         headers = {
             "accept": "application/json",
             "apikey": TOMORROW_API_KEY
