@@ -28,13 +28,13 @@ def get_tomorrowio_rainfall(lat, lon):
         end_time = (now + datetime.timedelta(days=3)).isoformat() + "Z"
 
         payload = {
-            "location": f"{lat},{lon}",
+            "location": "3.193,101.686",
             "fields": ["precipitationIntensity"],
             "units": "metric",
             "timesteps": ["1d"],
-            "startTime": "star_time",
-            "endTime": end_time,
-            "timezone": "auto"  # Required
+            "startTime": "2025-07-07T00:00:00Z",
+            "endTime": "2025-07-14T00:00:00Z",
+            "timezone": "Asia/Kuala_Lumpur"  # Required
         }
         response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
