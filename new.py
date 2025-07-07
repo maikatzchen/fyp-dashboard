@@ -29,7 +29,7 @@ def get_tomorrowio_rainfall(lat, lon):
 
         payload = {
             "location": f"{lat},{lon}",
-            "fields": ["precipitationAmount"],
+            "fields": ["precipitationIntensity"],
             "units": "metric",
             "timesteps": ["1d"],
             "startTime": "star_time",
