@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-st.title("🌤️ Tomorrow.io Realtime Weather (v3 API)")
+st.title("🌤️ Tomorrow.io v3 Realtime Weather")
 
 url = "https://api.tomorrow.io/v3/weather/realtime"
 params = {
@@ -10,11 +10,8 @@ params = {
 }
 
 response = requests.get(url, params=params)
-
-# Display response status
 st.write("Status Code:", response.status_code)
 
-# Display JSON response
 try:
     data = response.json()
     st.json(data)
