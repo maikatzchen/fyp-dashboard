@@ -47,7 +47,7 @@ for entry in data["list"]:
 print(f"🌧️ Today's Rainfall: {rainfall_today:.2f} mm")
 print(f"🌧️ 3-Day Rainfall: {rainfall_3d:.2f} mm")
 
-    try:
+try:
         return data["rain"].get("1h", 0.0)
     except:
         return 0.0
