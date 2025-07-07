@@ -178,42 +178,6 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         return 0.0
 
 
-# === NEW: Get Daily rainfall from Infobanjir ===
-def get_infobanjir_rainfall(lat, lon):
-    try:
-        stations_url = "https://publicinfobanjir.water.gov.my/api/hujan/stesen"
-        readings_url = "https://publicinfobanjir.water.gov.my/api/hujan/bacaan"
-        # Fetch stations
-        resp_stations = requests.get(stations_url, verify=False)
-        if resp_stations.status_code != 200:
-            st.error(f"Infobanjir API Error (stations): {resp_stations.status_code}")
-            return None, None
-        stations = resp_stations.json()["data"]
-
-        # Fetch readings
-        resp_readings = requests.get(readings_url, verify=False)
-        if resp_readings.status_code != 200:
-            st.error(f"Infobanjir API Error (readings): {resp_readings.status_code}")
-            return None, None
-        readings = resp_readings.json()["data"]
-
-        # Find nearest station
-        nearest = min(
-            stations, 
-            key=lambda s: ((float(s["latitude"]) - lat)**2 + (float(s["longitude"]) - lon)**2)
-        )
-        nearest_reading = next((r for r in readings if r["id"] == nearest["id"]), None)
-        if nearest_reading:
-            rainfall_mm = float(nearest_reading["bacaan"])
-            return rainfall_mm, nearest["nama"]
-        else:
-            return None, nearest["nama"]
-
-    except Exception as e:
-        st.error(f"Infobanjir Error: {e}")
-        return None, None
-
-
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
 st.title("🌧️ Flood Prediction Dashboard")
@@ -230,15 +194,6 @@ districts = {
 selected_date = st.sidebar.date_input("Select a date", datetime.date.today())
 selected_district = st.sidebar.selectbox("Select a district", list(districts.keys()))
 lat, lon = districts[selected_district]
-
-# NEW : INFOBANJIR 
-infobanjir_rainfall, station_name = get_infobanjir_rainfall(lat, lon)
-if infobanjir_rainfall is not None:
-    st.metric(f"🌧️ Ground Station Rainfall ({station_name})", f"{infobanjir_rainfall:.2f} mm")
-else:
-    st.warning("No Infobanjir data available.")
-# === Real-Time Weather Panel ===
-st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
 
 # Get real-time values
 rainfall_mm = get_openweather_rainfall(lat, lon)
