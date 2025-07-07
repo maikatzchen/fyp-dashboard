@@ -18,16 +18,23 @@ TOMORROW_API_KEY = "plmRZoGH98gI1yHUVxzVzgPnvYTSauk7"
 def get_tomorrowio_rainfall(lat, lon):
     try:
         url = "https://api.tomorrow.io/v4/timelines"
-        params = {
-            "location": f"{lat},{lon}",
-            "fields": "precipitationAmount",
-            "timesteps": "1d",
-            "units": "metric",
-            "startTime": "now",
-            "endTime": "nowPlus3d",
+        headers = {
+            "accept": "application/json",
             "apikey": TOMORROW_API_KEY
         }
-        response = requests.get(url, params=params)
+        payload = {
+            "location": f"{lat},{lon}",
+            "fields": ["precipitationAmount"],
+            "units": "metric",
+            "timesteps": ["1d"],
+            "startTime": "now",
+            "endTime": "nowPlus3d"
+
+            st.write("Tomorrow.io raw response:", response.json())
+
+        }
+        response = requests.post(url, json=payload, headers=headers)
+        response.raise_for_status()
         data = response.json()
 
         intervals = data["data"]["timelines"][0]["intervals"]
@@ -39,7 +46,6 @@ def get_tomorrowio_rainfall(lat, lon):
     except Exception as e:
         st.error(f"[Tomorrow.io Error] {e}")
         return 0.0, 0.0
-
         
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
