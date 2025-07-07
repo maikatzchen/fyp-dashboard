@@ -89,16 +89,21 @@ def get_datagovmy_rainfall(location):
         resp = requests.get(url, params=params)
         if resp.status_code == 200:
             data = resp.json()
-            if "data" in data and len(data["data"]) > 0:
-                forecasts = data["data"][0].get("forecast", [])
-                if forecasts:
+
+            # Check if "data" exists and is a list
+            if isinstance(data.get("data"), list) and len(data["data"]) > 0:
+                first_entry = data["data"][0]
+                forecasts = first_entry.get("forecast", [])
+                
+                # Check if "forecast" exists and has at least one item
+                if isinstance(forecasts, list) and len(forecasts) > 0:
                     rain_chance = forecasts[0].get("chance_of_rain", 0)
                     return rain_chance
                 else:
-                    st.warning(f"No forecast data available for {location}.")
+                    st.warning(f"No forecast available for {location}.")
                     return None
             else:
-                st.warning(f"No data found for {location} from API.")
+                st.warning(f"No forecast data found for {location}.")
                 return None
         else:
             st.warning(f"data.gov.my API returned {resp.status_code}")
@@ -106,7 +111,7 @@ def get_datagovmy_rainfall(location):
     except Exception as e:
         st.error(f"[Data.gov.my Error] {e}")
         return None
-
+        
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
 st.title("🌧️ Flood Prediction Dashboard")
