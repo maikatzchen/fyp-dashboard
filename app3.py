@@ -175,6 +175,27 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         st.error(f"[CHIRPS Error] {e}")
         return 0.0
 
+
+# === NEW: Get Daily rainfall from Infobanjir ===
+def get_infobanjir_rainfall(lat, lon):
+    try:
+        stations_url = "https://publicinfobanjir.water.gov.my/api/hujan/stesen"
+        readings_url = "https://publicinfobanjir.water.gov.my/api/hujan/bacaan"
+        stations = requests.get(stations_url).json()["data"]
+        readings = requests.get(readings_url).json()["data"]
+        # Find nearest station
+        nearest = min(
+            stations, 
+            key=lambda s: ((float(s["latitude"]) - lat)**2 + (float(s["longitude"]) - lon)**2)
+        )
+        nearest_reading = next(r for r in readings if r["id"] == nearest["id"])
+        rainfall_mm = float(nearest_reading["bacaan"])
+        return rainfall_mm, nearest["nama"]
+    except Exception as e:
+        st.error(f"Infobanjir Error: {e}")
+        return None, None
+
+
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
 st.title("🌧️ Flood Prediction Dashboard")
@@ -192,6 +213,12 @@ selected_date = st.sidebar.date_input("Select a date", datetime.date.today())
 selected_district = st.sidebar.selectbox("Select a district", list(districts.keys()))
 lat, lon = districts[selected_district]
 
+# NEW : INFOBANJIR 
+infobanjir_rainfall, station_name = get_infobanjir_rainfall(lat, lon)
+if infobanjir_rainfall is not None:
+    st.metric(f"🌧️ Ground Station Rainfall ({station_name})", f"{infobanjir_rainfall:.2f} mm")
+else:
+    st.warning("No Infobanjir data available.")
 # === Real-Time Weather Panel ===
 st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
 
