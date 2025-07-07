@@ -81,36 +81,45 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         return 0.0, "Unavailable"
 
 # === FUNCTION: Get rainfall chance from Data.gov.my ===
-@st.cache_data(ttl=600)
-def get_datagovmy_rainfall(location):
+def get_daily_rainfall(lat, lon, date_input, location):
     try:
         url = "https://api.data.gov.my/weather/forecast"
         params = {"location__location_name": location, "limit": 1}
-        resp = requests.get(url, params=params)
+        resp = requests.get(url, params=params, timeout=10)
         if resp.status_code == 200:
             data = resp.json()
+            st.write("API response (daily):", data)  # Debugging
 
-            # Check if "data" exists and is a list
-            if isinstance(data.get("data"), list) and len(data["data"]) > 0:
-                first_entry = data["data"][0]
-                forecasts = first_entry.get("forecast", [])
-                
-                # Check if "forecast" exists and has at least one item
-                if isinstance(forecasts, list) and len(forecasts) > 0:
-                    rain_chance = forecasts[0].get("chance_of_rain", 0)
-                    return rain_chance
-                else:
-                    st.warning(f"No forecast available for {location}.")
-                    return None
-            else:
-                st.warning(f"No forecast data found for {location}.")
-                return None
+            if isinstance(data, list) and len(data) > 0:
+                forecasts = data[0].get("forecast", [])
+                for forecast in forecasts:
+                    if forecast.get("forecast_date") == date_input.strftime('%Y-%m-%d'):
+                        rainfall = forecast.get("rainfall", 0.0)
+                        return rainfall, "data.gov.my"
+            st.warning(f"No daily data found for {location} on {date_input}. Falling back to CHIRPS.")
+            return get_daily_rainfall_chirps(lat, lon, date_input)
+
         else:
-            st.warning(f"data.gov.my API returned {resp.status_code}")
-            return None
+            st.error(f"data.gov.my API error: {resp.status_code}")
+            return get_daily_rainfall_chirps(lat, lon, date_input)
+
     except Exception as e:
-        st.error(f"[Data.gov.my Error] {e}")
-        return None
+        st.error(f"[Data.gov.my Error - Daily] {e}")
+        return get_daily_rainfall_chirps(lat, lon, date_input)
+
+# 3-day
+def get_3day_rainfall(lat, lon, end_date, location):
+    try:
+        total_rainfall = 0.0
+        for i in range(3):
+            day = end_date - datetime.timedelta(days=i)
+            daily, source = get_daily_rainfall(lat, lon, day, location)
+            total_rainfall += daily
+        return total_rainfall, source
+    except Exception as e:
+        st.error(f"[Data.gov.my Error - 3-Day] {e}")
+        return get_3day_rainfall_chirps(lat, lon, end_date), "CHIRPS"
+
         
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
@@ -129,20 +138,15 @@ selected_date = st.sidebar.date_input("Select a date", datetime.date.today())
 selected_district = st.sidebar.selectbox("Select a district", list(districts.keys()))
 lat, lon = districts[selected_district]
 
-# === Get data ===
-rainfall_govmy = get_datagovmy_rainfall(selected_district)
-rainfall_daily, source_daily = get_daily_rainfall_chirps(lat, lon, selected_date)
-rainfall_3d = get_3day_rainfall_chirps(lat, lon, selected_date)
+# Get rainfall data
+rainfall_daily, source_daily = get_daily_rainfall(lat, lon, selected_date, selected_district)
+rainfall_3d, source_3d = get_3day_rainfall(lat, lon, selected_date, selected_district)
 
-# === Display metrics ===
-col1, col2, col3 = st.columns(3)
-if rainfall_govmy is not None:
-    col1.metric("☔ Rain Chance (Data.gov.my)", f"{rainfall_govmy}%")
-else:
-    col1.metric("☔ Rain Chance (Data.gov.my)", "N/A")
+# Display
+col1, col2 = st.columns(2)
+col1.metric(f"📅 Daily Rainfall ({source_daily})", f"{rainfall_daily:.2f} mm")
+col2.metric(f"🌧️ 3-Day Rainfall ({source_3d})", f"{rainfall_3d:.2f} mm")
 
-col2.metric(f"📅 Daily Rainfall ({source_daily})", f"{rainfall_daily:.2f} mm")
-col3.metric("🌧️ 3-Day Rainfall (CHIRPS)", f"{rainfall_3d:.2f} mm")
 
 # === Optional Map (showing location) ===
 st.map(data={"lat": [lat], "lon": [lon]})
