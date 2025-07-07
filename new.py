@@ -81,6 +81,7 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         return 0.0, "Unavailable"
 
 # === FUNCTION: Get rainfall chance from Data.gov.my ===
+@st.cache_data(ttl=600)
 def get_datagovmy_rainfall(location):
     try:
         url = "https://api.data.gov.my/weather/forecast"
