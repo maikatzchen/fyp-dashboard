@@ -1,17 +1,15 @@
 import streamlit as st
 import requests
 
-st.title("🌤️ Tomorrow.io Forecast Test")
+st.title("🌤️ Tomorrow.io Realtime Weather (v3 API)")
 
-url = "https://api.tomorrow.io/v4/weather/forecast"
-headers = {
-    "Authorization": "Bearer plmRZoGH98gI1yHUVxzVzgPnvYTSauk7"
-}
+url = "https://api.tomorrow.io/v3/weather/realtime"
 params = {
-    "location": "42.3478,-71.0466"
+    "location": "42.3478,-71.0466",
+    "apikey": "plmRZoGH98gI1yHUVxzVzgPnvYTSauk7"
 }
 
-response = requests.get(url, headers=headers, params=params)
+response = requests.get(url, params=params)
 
 # Display response status
 st.write("Status Code:", response.status_code)
