@@ -178,48 +178,70 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         st.error(f"[CHIRPS Error] {e}")
         return 0.0
 
-# === CALL VERTEX AI PREDICTION ===
+# === AUTO-DETECT MODEL SCHEMA & CALL PREDICTION ===
 def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     client_options = {"api_endpoint": "us-east1-aiplatform.googleapis.com"}
-    client = aiplatform_v1.PredictionServiceClient(
-        credentials=credentials,client_options=client_options
+    
+    # Initialize Vertex AI clients
+    endpoint_client = aiplatform.EndpointServiceClient(
+        credentials=credentials,
+        client_options=client_options
+    )
+    model_client = aiplatform.ModelServiceClient(
+        credentials=credentials,
+        client_options=client_options
+    )
+    prediction_client = aiplatform.PredictionServiceClient(
+        credentials=credentials,
+        client_options=client_options
     )
 
+    # Get deployed model info
     project = "pivotal-crawler-459812-m5"
     endpoint_id = "8324160641333985280"
     location = "us-east1"
-    endpoint = client.endpoint_path(project=project, location=location, endpoint=endpoint_id)
+    endpoint_name = f"projects/{project}/locations/{location}/endpoints/{endpoint_id}"
 
+    endpoint = endpoint_client.get_endpoint(name=endpoint_name)
+    deployed_model = endpoint.deployed_models[0]  # Assuming only 1 deployed model
+
+    st.write("🔍 Model Display Name:", deployed_model.display_name)
+    st.write("🔍 Model Resource Name:", deployed_model.model)
+
+    # Get model details (schema)
+    model = model_client.get_model(name=deployed_model.model)
+    st.write("📦 Model Full Metadata:", model)
+
+    # Show user what fields the model expects
+    st.success("✅ Auto-detected model schema. Check above for details.")
+    
+    # === PREPARE PREDICTION PAYLOAD ===
+    # You may need to adjust field names here based on schema
     instance_dict = {
         "month": int(month),
         "rainfall_mm": float(rainfall_mm),
         "rainfall_3d": float(rainfall_3d)
     }
-    
-#DEBUG PURPOSE: PRINT PAYLOAD
-    
     instances = [instance_dict]
-    parameters = {}
-    
-    st.write("Vertex AI Payload:", instance_dict)
-    st.write("DEBUG: instances =", instances)
-    st.write("DEBUG: parameters =", parameters)
 
-    response = client.predict(
-        endpoint=endpoint,
-        instances=instances,
-        parameters=parameters
+    # DEBUG: Show payload before sending
+    st.write("🚀 Payload being sent to Vertex AI:", instances)
+
+    # Call prediction
+    response = prediction_client.predict(
+        endpoint=endpoint_name,
+        instances=instances
     )
-    
-# DEBUT PURPOSE: PRINT RAW PREDICTION RESPONSE
-    st.write("DEBUG: Vertex AI Response", response)
+
+    st.write("🎯 Vertex AI Response:", response)
     predictions = response.predictions
     if predictions:
-        st.write("Predictions:", predictions)
+        st.success(f"✅ Prediction Result: {predictions[0]}")
         return predictions[0]
     else:
-        st.error("No predictions returned.")
+        st.error("❌ No predictions returned.")
         return None
+
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
