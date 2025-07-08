@@ -187,12 +187,12 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     }]
     
 #DEBUG PURPOSE: PRINT PAYLOAD
-    st.write("Vertex AI Payload:", {"instances": instances})
-    payload = json.dumps({"instances": instances}).encode("utf-8")
-    prediction = endpoint.raw_predict(payload, content_type="application/json")
+    st.write("Vertex AI Payload:", instances)
+    prediction = endpoint.predict(instances=instances)
     
 # DEBUT PURPOSE: PRINT RAW PREDICTION RESPONSE
-    return json.loads(prediction.decode("utf-8"))
+    st.write("Vertex AI Response:", prediction)
+    return prediction[0]
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
