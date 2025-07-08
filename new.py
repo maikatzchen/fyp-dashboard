@@ -190,11 +190,11 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     credentials=credentials,
     client_options=client_options
 )
-model_client = ModelServiceClient(
+    model_client = ModelServiceClient(
     credentials=credentials,
     client_options=client_options
 )
-prediction_client = PredictionServiceClient(
+    prediction_client = PredictionServiceClient(
     credentials=credentials,
     client_options=client_options
 )
