@@ -227,6 +227,14 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
         instances=instances
     )
 
+    predictions = response.predictions
+    if predictions:
+        
+        return predictions[0]
+    else:
+        st.error("❌ No predictions returned.")
+        return None
+
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
 st.title("🌧️ Flood Prediction Dashboard")
