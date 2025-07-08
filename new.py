@@ -285,29 +285,41 @@ st.map(df)
 if st.button("Predict Flood Risk"):
     result = get_flood_prediction(month, rainfall_day, rainfall_3d)
 
-result_dict = dict(result)
-st.write("📦 Raw Prediction Response (dict):", result_dict)
+    result_dict = dict(result)
+    st.write("📦 Raw Prediction Response (dict):", result_dict)
 
-classes = ast.literal_eval(result_dict.get("classes","[]"))
-classes = ast.literal_eval(result_dict.get("scores","[]"))
+    classes_str = result_dict.get("classes", "[]")
+    scores_str = result_dict.get("scores", "[]")
 
-if classes and scores:
-    if '1' in classes:
-        flood_index = classes.index('1')
-        flood_prob = float(scores[flood_index])
-        no_flood_prob = 1 - flood_prob
+    try:
+        classes = json.loads(classes_str.replace("'", '"'))  # Replace single quotes with double
+        scores = json.loads(scores_str.replace("'", '"'))
+    except json.JSONDecodeError:
+        st.error("❌ Failed to parse prediction response. Check model output format.")
+        st.write("🔎 Raw classes:", classes_str)
+        st.write("🔎 Raw scores:", scores_str)
+        classes = []
+        scores = []
 
-    no_flood_percent = round(no_flood_prob * 100, 2)
-    flood_percent = round(flood_prob * 100, 2)
+    if classes and scores:
+        if '1' in classes:
+            flood_index = classes.index('1')
+            flood_prob = float(scores[flood_index])
+            no_flood_prob = 1 - flood_prob
 
-    st.write(f"🌊 **Flood Probability:** {flood_percent}%")
-    st.write(f"☀️ **No Flood Probability:** {no_flood_percent}%")
+            no_flood_percent = round(no_flood_prob * 100, 2)
+            flood_percent = round(flood_prob * 100, 2)
 
-    predicted_class = "Flood" if flood_prob >= no_flood_prob else "No Flood"
+            st.write(f"🌊 **Flood Probability:** {flood_percent}%")
+            st.write(f"☀️ **No Flood Probability:** {no_flood_percent}%")
 
-    if predicted_class == "Flood":
-        st.error(f"🚨 **Predicted: {predicted_class}**")
+            predicted_class = "Flood" if flood_prob >= no_flood_prob else "No Flood"
+
+            if predicted_class == "Flood":
+                st.error(f"🚨 **Predicted: {predicted_class}**")
+            else:
+                st.success(f"✅ **Predicted: {predicted_class}**")
+        else:
+            st.error("❌ Class '1' (Flood) not found in model response.")
     else:
-        st.success(f"✅ **Predicted: {predicted_class}**")
-else:
-    st.error("❌ Prediction response missing expected scores. Check your model or payload.")
+        st.error("❌ Prediction response missing expected scores. Check your model or payload.")
