@@ -283,43 +283,57 @@ df = pd.DataFrame({"lat": [lat], "lon": [lon]})
 st.map(df)
 
 if st.button("Predict Flood Risk"):
-    result = get_flood_prediction(month, rainfall_day, rainfall_3d)
+    with st.spinner("Predicting flood risk..."):
+        result = get_flood_prediction(month, rainfall_day, rainfall_3d)
 
-    result_dict = dict(result)
-    st.write("📦 Raw Prediction Response (dict):", result_dict)
+        result_dict = dict(result)
+        st.write("📦 Raw Prediction Response (dict):", result_dict)
 
-    classes_str = result_dict.get("classes", "[]")
-    scores_str = result_dict.get("scores", "[]")
+        classes_raw = result_dict.get("classes", "[]")
+        scores_raw = result_dict.get("scores", "[]")
 
-    try:
-        classes = json.loads(classes_str.replace("'", '"'))  # Replace single quotes with double
-        scores = json.loads(scores_str.replace("'", '"'))
-    except json.JSONDecodeError:
-        st.error("❌ Failed to parse prediction response. Check model output format.")
-        st.write("🔎 Raw classes:", classes_str)
-        st.write("🔎 Raw scores:", scores_str)
-        classes = []
-        scores = []
-
-    if classes and scores:
-        if '1' in classes:
-            flood_index = classes.index('1')
-            flood_prob = float(scores[flood_index])
-            no_flood_prob = 1 - flood_prob
-
-            no_flood_percent = round(no_flood_prob * 100, 2)
-            flood_percent = round(flood_prob * 100, 2)
-
-            st.write(f"🌊 **Flood Probability:** {flood_percent}%")
-            st.write(f"☀️ **No Flood Probability:** {no_flood_percent}%")
-
-            predicted_class = "Flood" if flood_prob >= no_flood_prob else "No Flood"
-
-            if predicted_class == "Flood":
-                st.error(f"🚨 **Predicted: {predicted_class}**")
-            else:
-                st.success(f"✅ **Predicted: {predicted_class}**")
+        if isinstance(classes_raw, str):
+            try:
+                classes = json.loads(classes_raw.replace("'", '"'))
+            except json.JSONDecodeError:
+                st.error("❌ Failed to parse 'classes'. Check model response.")
+                st.write("🔎 Raw 'classes':", classes_raw)
+                classes = []
         else:
-            st.error("❌ Class '1' (Flood) not found in model response.")
-    else:
-        st.error("❌ Prediction response missing expected scores. Check your model or payload.")
+            classes = classes_raw
+
+        # Ensure scores is a list
+        if isinstance(scores_raw, str):
+            try:
+                scores = json.loads(scores_raw.replace("'", '"'))
+            except json.JSONDecodeError:
+                st.error("❌ Failed to parse 'scores'. Check model response.")
+                st.write("🔎 Raw 'scores':", scores_raw)
+                scores = []
+        else:
+            scores = scores_raw
+
+        # If we got valid classes and scores
+        if classes and scores:
+            if '1' in classes:
+                flood_index = classes.index('1')
+                flood_prob = float(scores[flood_index])
+                no_flood_prob = 1 - flood_prob
+
+                flood_percent = round(flood_prob * 100, 2)
+                no_flood_percent = round(no_flood_prob * 100, 2)
+
+                st.write(f"🌊 **Flood Probability:** {flood_percent}%")
+                st.write(f"☀️ **No Flood Probability:** {no_flood_percent}%")
+
+                predicted_class = "Flood" if flood_prob >= no_flood_prob else "No Flood"
+
+                if predicted_class == "Flood":
+                    st.error(f"🚨 **Predicted: {predicted_class}**")
+                else:
+                    st.success(f"✅ **Predicted: {predicted_class}**")
+            else:
+                st.error("❌ Class '1' (Flood) not found in model response.")
+                st.write("🔎 Classes:", classes)
+        else:
+            st.error("❌ Prediction response missing scores or classes.")
