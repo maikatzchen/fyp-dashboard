@@ -284,7 +284,7 @@ st.map(df)
 if st.button("Predict Flood Risk"):
     result = get_flood_prediction(month, rainfall_day, rainfall_3d)
     
-if "flood_label_0_scores" in result and "flood_label_1_scores" in result:
+if result and "flood_label_0_scores" in result and "flood_label_1_scores" in result:
     no_flood_prob = float(result["flood_label_0_scores"])
     flood_prob = float(result["flood_label_1_scores"])
 
