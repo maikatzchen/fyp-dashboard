@@ -195,7 +195,7 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     }
     
 #DEBUG PURPOSE: PRINT PAYLOAD
-    st.write("Vertex AI Payload:", instance)
+    st.write("Vertex AI Payload:", instance_dict)
     instance = json_format.ParseDict(instance_dict, Value())
     instances = [instance]
     parameters_dict = {}
