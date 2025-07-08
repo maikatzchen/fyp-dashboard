@@ -211,9 +211,6 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
 
     # Get model details (schema)
     model = model_client.get_model(name=deployed_model.model)
-
-    # Show user what fields the model expects
-    st.success("✅ Auto-detected model schema. Check above for details.")
     
     # === PREPARE PREDICTION PAYLOAD ===
     # You may need to adjust field names here based on schema
