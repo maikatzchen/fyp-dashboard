@@ -281,8 +281,18 @@ col3.metric("3-Day Rainfall (mm)", f"{rainfall_3d:.2f}")
 df = pd.DataFrame({"lat": [lat], "lon": [lon]})
 st.map(df)
 
+no_flood_prob = result.get("flood_label_0_scores", 0)
+flood_prob = result.get("flood_label_1_scores", 0)
+no_flood_percent = round(no_flood_prob * 100, 2)
+flood_percent = round(flood_prob * 100, 2)
+
 if st.button("Predict Flood Risk"):
     result = get_flood_prediction(month, rainfall_day, rainfall_3d)
-    st.write("📦 Full Prediction Output:", predictions[0])
-    st.write("🌊 Flood Probability:", round(result["flood_label_1_scores"] * 100, 2), "%")
-    st.write("✅ No Flood Probability:", round(result["flood_label_0_scores"] * 100, 2), "%")
+    st.write(f"🌊 **Flood Probability:** {flood_percent}%")
+    st.write(f"☀️ **No Flood Probability:** {no_flood_percent}%")
+
+predicted_class = "Flood" if flood_prob >= no_flood_prob else "No Flood"
+if predicted_class == "Flood":
+    st.error(f"🚨 **Predicted: {predicted_class}**")
+else:
+    st.success(f"✅ **Predicted: {predicted_class}**")
