@@ -132,7 +132,7 @@ def get_daily_rainfall_gee(lat, lon, date_input):
         )
 
         result_dict = result.getInfo()
-        st.write("Daily result (raw):", result_dict)
+        
         rainfall = result_dict.get('precipitationCal', 0.0)
 
         # Use fallback if IMERG has 0.0
