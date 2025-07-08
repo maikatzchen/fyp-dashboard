@@ -229,7 +229,6 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
 
     predictions = response.predictions
     if predictions:
-        
         return predictions[0]
     else:
         st.error("❌ No predictions returned.")
