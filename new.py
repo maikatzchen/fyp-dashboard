@@ -176,7 +176,7 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         st.error(f"[CHIRPS Error] {e}")
         return 0.0
 
-# === CALL VERTEX AI ENDPOINT ===
+# === CALL VERTEX AI PREDICTION ===
 def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     endpoint = aiplatform.Endpoint("8324160641333985280")
 
@@ -188,7 +188,7 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     
 #DEBUG PURPOSE: PRINT PAYLOAD
     st.write("Vertex AI Payload:", {"instances": instances})
-    prediction = endpoint.predict(instances={"instances":instances})
+    prediction = endpoint.raw_predict(instances={"instances":instances})
     
 # DEBUT PURPOSE: PRINT RAW PREDICTION RESPONSE
     return prediction.predictions[0]
