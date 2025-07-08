@@ -1,6 +1,7 @@
 # for testing purpose using IMERG and CHIRPS as fallback with error display for debugging 
 
 import pandas as pd
+import json
 import streamlit as st
 import requests
 import datetime 
@@ -188,10 +189,11 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     
 #DEBUG PURPOSE: PRINT PAYLOAD
     st.write("Vertex AI Payload:", {"instances": instances})
-    prediction = endpoint.raw_predict({"instances": instances})
+    payload = json.dumps({"instances": instances})
+    prediction = endpoint.raw_predict(payload)
     
 # DEBUT PURPOSE: PRINT RAW PREDICTION RESPONSE
-    return prediction.predictions[0]
+    return prediction
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
