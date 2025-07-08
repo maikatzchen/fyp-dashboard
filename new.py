@@ -209,12 +209,8 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     endpoint = endpoint_client.get_endpoint(name=endpoint_name)
     deployed_model = endpoint.deployed_models[0]  # Assuming only 1 deployed model
 
-    st.write("🔍 Model Display Name:", deployed_model.display_name)
-    st.write("🔍 Model Resource Name:", deployed_model.model)
-
     # Get model details (schema)
     model = model_client.get_model(name=deployed_model.model)
-    st.write("📦 Model Full Metadata:", model)
 
     # Show user what fields the model expects
     st.success("✅ Auto-detected model schema. Check above for details.")
@@ -228,16 +224,12 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     }
     instances = [instance_dict]
 
-    # DEBUG: Show payload before sending
-    st.write("🚀 Payload being sent to Vertex AI:", instances)
-
     # Call prediction
     response = prediction_client.predict(
         endpoint=endpoint_name,
         instances=instances
     )
 
-    st.write("🎯 Vertex AI Response:", response)
     predictions = response.predictions
     if predictions:
         st.success(f"✅ Prediction Result: {predictions[0]}")
