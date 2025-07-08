@@ -120,9 +120,6 @@ def get_daily_rainfall_gee(lat, lon, date_input):
             .select('precipitationCal')
         )
 
-        image_count = dataset.size().getInfo()
-        st.write(f"IMERG image count for {date_obj.date()}: {image_count}")
-
         daily_precip = dataset.sum()
         result = daily_precip.reduceRegion(
             reducer=ee.Reducer.mean(),
