@@ -181,7 +181,9 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
 # === CALL VERTEX AI PREDICTION ===
 def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     client_options = {"api_endpoint": "us-east1-aiplatform.googleapis.com"}
-    client = aiplatform_v1.PredictionServiceClient(credentials=credentials,client_options=client_options)
+    client = aiplatform_v1.PredictionServiceClient(
+        credentials=credentials,client_options=client_options
+    )
 
     project = "pivotal-crawler-459812-m5"
     endpoint_id = "8324160641333985280"
@@ -195,18 +197,19 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     }
     
 #DEBUG PURPOSE: PRINT PAYLOAD
+    
+    instances = [instance_dict]
+    parameters = {}
+    
     st.write("Vertex AI Payload:", instance_dict)
-    instance = json_format.ParseDict(instance_dict, Value())
-    instances = [instance]
-    parameters_dict = {}
-    parameters = json_format.ParseDict(parameters_dict, Value())
+    st.write("DEBUG: instances =", instances)
+    st.write("DEBUG: parameters =", parameters)
+
     response = client.predict(
         endpoint=endpoint,
         instances=instances,
         parameters=parameters
     )
-    st.write("DEBUG: instances =", instances)
-    st.write("DEBUG: parameters =", parameters)
     
 # DEBUT PURPOSE: PRINT RAW PREDICTION RESPONSE
     st.write("DEBUG: Vertex AI Response", response)
