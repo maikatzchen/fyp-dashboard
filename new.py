@@ -8,7 +8,7 @@ import datetime
 from datetime import date
 import ee
 from google.oauth2 import service_account
-from google.cloud import aiplatform_v1 as aiplatform
+from google.cloud import aiplatform_v1
 from google.protobuf import json_format
 from google.protobuf.struct_pb2 import Value
 from google.cloud.aiplatform_v1.types import PredictRequest
