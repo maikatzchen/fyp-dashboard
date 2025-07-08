@@ -305,4 +305,3 @@ if "flood_label_0_scores" in result_dict and "flood_label_1_scores" in result_di
         st.success(f"✅ **Predicted: {predicted_class}**")
 else:
     st.error("❌ Prediction response missing expected scores. Check your model or payload.")
-    st.write("🔎 Raw prediction response:", result_dict)
