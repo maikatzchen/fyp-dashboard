@@ -221,9 +221,9 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     # === PREPARE PREDICTION PAYLOAD ===
     # You may need to adjust field names here based on schema
     instance_dict = {
-        "month": int(month),
-        "rainfall_mm": float(rainfall_mm),
-        "rainfall_3d": float(rainfall_3d)
+        "month": str(month),
+        "rainfall_mm": str(rainfall_mm),
+        "rainfall_3d": str(rainfall_3d)
     }
     instances = [instance_dict]
 
