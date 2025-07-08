@@ -181,12 +181,16 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     endpoint = aiplatform.Endpoint("8324160641333985280")
 
     instances = [{
-        "month": month,
-        "rainfall_mm": rainfall_mm,
-        "rainfall_3d": rainfall_3d
+        "month": int(month),
+        "rainfall_mm": float(rainfall_mm),
+        "rainfall_3d": float(rainfall_3d)
     }]
-
+    
+#DEBUG PURPOSE: PRINT PAYLOAD
+    st.write("Vertex AI Payload:", instances)
     prediction = endpoint.predict(instances=instances)
+    
+# DEBUT PURPOSE: PRINT RAW PREDICTION RESPONSE
     return prediction.predictions[0]
 
 # === STREAMLIT UI ===
