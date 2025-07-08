@@ -175,7 +175,7 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         )
 
         result_dict = result.getInfo()
-        st.write("CHIRPS daily result (raw):", result_dict)
+        
         return result_dict.get("precipitation", 0.0), "CHIRPS"
 
     except Exception as e:
