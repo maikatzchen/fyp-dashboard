@@ -281,8 +281,8 @@ col3.metric("3-Day Rainfall (mm)", f"{rainfall_3d:.2f}")
 df = pd.DataFrame({"lat": [lat], "lon": [lon]})
 st.map(df)
 
-no_flood_prob = result.get("flood_label_0_scores", 0)
-flood_prob = result.get("flood_label_1_scores", 0)
+no_flood_prob = float(result.get("flood_label_0_scores", 0) or 0)
+flood_prob = float(result.get("flood_label_1_scores", 0) or 0)
 no_flood_percent = round(no_flood_prob * 100, 2)
 flood_percent = round(flood_prob * 100, 2)
 
