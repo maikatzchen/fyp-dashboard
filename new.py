@@ -160,7 +160,6 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         image_count = dataset.size().getInfo()
         st.write(f"CHIRPS image count for {date_obj.date()}: {image_count}")
 
-
         daily_precip = dataset.sum()
         result = daily_precip.reduceRegion(
             reducer=ee.Reducer.mean(),
@@ -190,10 +189,10 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
 #DEBUG PURPOSE: PRINT PAYLOAD
     st.write("Vertex AI Payload:", {"instances": instances})
     payload = json.dumps({"instances": instances}).encode("utf-8")
-    prediction = endpoint.raw_predict(payload)
+    prediction = endpoint.raw_predict(payload, content_type="application/json")
     
 # DEBUT PURPOSE: PRINT RAW PREDICTION RESPONSE
-    return prediction
+    return json.loads(prediction.decode("utf-8"))
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
