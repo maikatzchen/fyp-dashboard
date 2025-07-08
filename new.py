@@ -283,10 +283,13 @@ st.map(df)
 
 if st.button("Predict Flood Risk"):
     result = get_flood_prediction(month, rainfall_day, rainfall_3d)
-    
-if result and "flood_label_0_scores" in result and "flood_label_1_scores" in result:
-    no_flood_prob = float(result["flood_label_0_scores"])
-    flood_prob = float(result["flood_label_1_scores"])
+
+result_dict = dict(result)
+st.write("📦 Raw Prediction Response (dict):", result_dict)
+
+if "flood_label_0_scores" in result_dict and "flood_label_1_scores" in result_dict:
+    no_flood_prob = float(result_dict["flood_label_0_scores"])
+    flood_prob = float(result_dict["flood_label_1_scores"])
 
     no_flood_percent = round(no_flood_prob * 100, 2)
     flood_percent = round(flood_prob * 100, 2)
@@ -302,4 +305,4 @@ if result and "flood_label_0_scores" in result and "flood_label_1_scores" in res
         st.success(f"✅ **Predicted: {predicted_class}**")
 else:
     st.error("❌ Prediction response missing expected scores. Check your model or payload.")
-    st.write("🔎 Raw prediction response:", result)
+    st.write("🔎 Raw prediction response:", result_dict)
