@@ -7,6 +7,7 @@ import requests
 import datetime 
 from datetime import date
 import ee
+import ast
 from google.oauth2 import service_account
 from google.cloud import aiplatform_v1
 from google.protobuf import json_format
@@ -287,9 +288,14 @@ if st.button("Predict Flood Risk"):
 result_dict = dict(result)
 st.write("📦 Raw Prediction Response (dict):", result_dict)
 
-if "flood_label_0_scores" in result_dict and "flood_label_1_scores" in result_dict:
-    no_flood_prob = float(result_dict["flood_label_0_scores"])
-    flood_prob = float(result_dict["flood_label_1_scores"])
+classes = ast.literal_eval(result_dict.get("classes","[]"))
+classes = ast.literal_eval(result_dict.get("scores","[]"))
+
+if classes and scores:
+    if '1' in classes:
+        flood_index = classes.index('1')
+        flood_prob = float(scores[flood_index])
+        no_flood_prob = 1 - flood_prob
 
     no_flood_percent = round(no_flood_prob * 100, 2)
     flood_percent = round(flood_prob * 100, 2)
