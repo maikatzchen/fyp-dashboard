@@ -217,8 +217,8 @@ rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
 col1, col2, col3 = st.columns(3)
 col1.metric("Current Rainfall (mm)", f"{rainfall_hour:.2f}")
-col3.metric(f"Rainfall (mm) [{source}]", f"{rainfall_day:.2f}")
-col2.metric("3-Day Rainfall (mm)", f"{rainfall_3d:.2f}")
+col2.metric(f"Rainfall (mm) [{source}]", f"{rainfall_day:.2f}")
+col3.metric("3-Day Rainfall (mm)", f"{rainfall_3d:.2f}")
 
 # === Optional Map (showing location) ===
 df = pd.DataFrame({"lat": [lat], "lon": [lon]})
