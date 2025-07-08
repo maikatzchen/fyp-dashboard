@@ -186,18 +186,18 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     client_options = {"api_endpoint": "us-east1-aiplatform.googleapis.com"}
     
     # Initialize Vertex AI clients
-    endpoint_client = aiplatform.EndpointServiceClient(
-        credentials=credentials,
-        client_options=client_options
-    )
-    model_client = aiplatform.ModelServiceClient(
-        credentials=credentials,
-        client_options=client_options
-    )
-    prediction_client = aiplatform.PredictionServiceClient(
-        credentials=credentials,
-        client_options=client_options
-    )
+    endpoint_client = EndpointServiceClient(
+    credentials=credentials,
+    client_options=client_options
+)
+model_client = ModelServiceClient(
+    credentials=credentials,
+    client_options=client_options
+)
+prediction_client = PredictionServiceClient(
+    credentials=credentials,
+    client_options=client_options
+)
 
     # Get deployed model info
     project = "pivotal-crawler-459812-m5"
