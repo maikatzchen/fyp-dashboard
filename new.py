@@ -283,5 +283,6 @@ st.map(df)
 
 if st.button("Predict Flood Risk"):
     result = get_flood_prediction(month, rainfall_day, rainfall_3d)
+    st.write("📦 Full Prediction Output:", predictions[0])
     st.write("🌊 Flood Probability:", round(result["flood_label_1_scores"] * 100, 2), "%")
     st.write("✅ No Flood Probability:", round(result["flood_label_0_scores"] * 100, 2), "%")
