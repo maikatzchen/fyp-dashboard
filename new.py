@@ -204,6 +204,9 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
         endpoint=endpoint,
         instances=instances,
         parameters=parameters
+
+    st.write("DEBUG: instances =", instances)
+    st.write("DEBUG: parameters =", parameters)
     )
     
 # DEBUT PURPOSE: PRINT RAW PREDICTION RESPONSE
