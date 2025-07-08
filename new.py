@@ -194,7 +194,7 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     
 #DEBUG PURPOSE: PRINT PAYLOAD
     st.write("Vertex AI Payload:", instance)
-    request = PredictRequest(
+    request = aiplatform_v1.types.PredictRequest(
         endpoint=endpoint,
         instances=[instance],
         parameters={}
