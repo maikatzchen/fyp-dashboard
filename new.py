@@ -67,7 +67,7 @@ def get_gee_3day_rainfall(lat, lon, end_date):
         rainfall = result_dict.get("precipitationCal", 0.0)
 
         if rainfall == 0.0:
-            st.warning("IMERG 3-day rainfall is 0.0 or unavailable. Switching to CHIRPS backup...")
+            
             return get_3day_rainfall_chirps(lat, lon, end_date)
 
         return rainfall
@@ -134,7 +134,7 @@ def get_daily_rainfall_gee(lat, lon, date_input):
 
         # Use fallback if IMERG has 0.0
         if rainfall == 0.0:
-            st.warning("IMERG daily rainfall is 0.0 or unavailable. Switching to CHIRPS backup...")
+            
             return get_daily_rainfall_chirps(lat, lon, date_input)  # ✅ returns tuple (value, source)
 
         return rainfall, "IMERG"
@@ -160,8 +160,6 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
             .filterDate(start_date, end_date) \
             .select("precipitation")
         
-        image_count = dataset.size().getInfo()
-        st.write(f"CHIRPS image count for {date_obj.date()}: {image_count}")
 
         daily_precip = dataset.sum()
         result = daily_precip.reduceRegion(
