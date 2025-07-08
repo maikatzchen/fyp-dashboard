@@ -181,7 +181,7 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
 # === CALL VERTEX AI PREDICTION ===
 def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     client_options = {"api_endpoint": "us-east1-aiplatform.googleapis.com"}
-    client = aiplatform.PredictionServiceClient(client_options=client_options)
+    client = aiplatform_v1.PredictionServiceClient(credentials=credentials,client_options=client_options)
 
     project = "pivotal-crawler-459812-m5"
     endpoint_id = "8324160641333985280"
