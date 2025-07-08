@@ -8,7 +8,9 @@ import datetime
 from datetime import date
 import ee
 from google.oauth2 import service_account
-from google.cloud import aiplatform_v1
+from google.cloud import aiplatform_v1 as aiplatform
+from google.protobuf import json_format
+from google.protobuf.struct_pb2 import Value
 from google.cloud.aiplatform_v1.types import PredictRequest
 
 # === GCP AUTHENTICATION ===
@@ -178,15 +180,15 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
 
 # === CALL VERTEX AI PREDICTION ===
 def get_flood_prediction(month, rainfall_mm, rainfall_3d):
-    client = aiplatform_v1.PredictionServiceClient()
+    client_options = {"api_endpoint": "us-east1-aiplatform.googleapis.com"}
+    client = aiplatform.PredictionServiceClient(client_options=client_options)
 
-    endpoint = client.endpoint_path(
-        project="pivotal-crawler-459812-m5",
-        location="us-east1",
-        endpoint="8324160641333985280"
-    )
+    project = "pivotal-crawler-459812-m5"
+    endpoint_id = "8324160641333985280"
+    location = "us-east1"
+    endpoint = client.endpoint_path(project=project, location=location, endpoint=endpoint_id)
 
-    instance = {
+    instance_dict = {
         "month": int(month),
         "rainfall_mm": float(rainfall_mm),
         "rainfall_3d": float(rainfall_3d)
@@ -194,17 +196,25 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     
 #DEBUG PURPOSE: PRINT PAYLOAD
     st.write("Vertex AI Payload:", instance)
-    request = aiplatform_v1.types.PredictRequest(
+    instance = json_format.ParseDict(instance_dict, Value())
+    instances = [instance]
+    parameters_dict = {}
+    parameters = json_format.ParseDict(parameters_dict, Value())
+    response = client.predict(
         endpoint=endpoint,
-        instances=[instance],
-        parameters={}
+        instances=instances,
+        parameters=parameters
     )
     
 # DEBUT PURPOSE: PRINT RAW PREDICTION RESPONSE
-    response = client.predict(request=request)
     st.write("DEBUG: Vertex AI Response", response)
-
-    return response.predictions[0]
+    predictions = response.predictions
+    if predictions:
+        st.write("Predictions:", predictions)
+        return predictions[0]
+    else:
+        st.error("No predictions returned.")
+        return None
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
