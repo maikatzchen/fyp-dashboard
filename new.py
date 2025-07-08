@@ -14,7 +14,6 @@ from google.cloud.aiplatform_v1.types import PredictRequest
 # === GCP AUTHENTICATION ===
 service_account_info = st.secrets["gcp_service_account"]
 credentials = service_account.Credentials.from_service_account_info(service_account_info)
-aiplatform.init(project="pivotal-crawler-459812-m5", location="us-east1", credentials=credentials)
 
 # === LOAD GEE CREDENTIALS FROM STREAMLIT SECRETS ===
 def initialize_ee():
