@@ -188,7 +188,8 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     
 #DEBUG PURPOSE: PRINT PAYLOAD
     st.write("Vertex AI Payload:", instances)
-    prediction = endpoint.predict(instances=instances)
+    payload = {"instances": instances}
+    prediction = endpoint.predict(instances=payload["instances"])
     
 # DEBUT PURPOSE: PRINT RAW PREDICTION RESPONSE
     st.write("Vertex AI Response:", prediction)
