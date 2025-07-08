@@ -97,6 +97,7 @@ def get_3day_rainfall_chirps(lat, lon, end_date):
 
         result_dict = result.getInfo()
         
+        return result_dict.get("precipitation", 0.0)
     except Exception as e:
         st.error(f"[CHIRPS Error - 3-Day] {e}")
         return 0.0
