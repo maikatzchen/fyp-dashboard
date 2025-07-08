@@ -12,6 +12,9 @@ from google.cloud import aiplatform_v1
 from google.protobuf import json_format
 from google.protobuf.struct_pb2 import Value
 from google.cloud.aiplatform_v1.types import PredictRequest
+from google.cloud.aiplatform_v1.services.endpoint_service import EndpointServiceClient
+from google.cloud.aiplatform_v1.services.model_service import ModelServiceClient
+from google.cloud.aiplatform_v1.services.prediction_service import PredictionServiceClient
 
 # === GCP AUTHENTICATION ===
 service_account_info = st.secrets["gcp_service_account"]
