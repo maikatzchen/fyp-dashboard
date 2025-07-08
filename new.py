@@ -26,10 +26,10 @@ def initialize_ee():
     ee.Initialize(credentials.with_scopes(["https://www.googleapis.com/auth/cloud-platform"]))
 initialize_ee()
 
-# === CONFIGURATION ===
+# === FUNCTION: Get 1-hour rainfall from OpenWeatherMap ===
+
 OPENWEATHER_API_KEY = st.secrets["openweather"]["api_key"]
 
-# === FUNCTION: Get 1-hour rainfall from OpenWeatherMap ===
 def get_openweather_rainfall(lat, lon):
     url = "https://api.openweathermap.org/data/2.5/weather"
     params = {
@@ -96,8 +96,7 @@ def get_3day_rainfall_chirps(lat, lon, end_date):
         )
 
         result_dict = result.getInfo()
-        st.write("CHIRPS 3-day result (raw):", result_dict)
-        return result_dict.get("precipitation", 0.0)
+        
     except Exception as e:
         st.error(f"[CHIRPS Error - 3-Day] {e}")
         return 0.0
