@@ -8,7 +8,8 @@ import datetime
 from datetime import date
 import ee
 from google.oauth2 import service_account
-from google.cloud import aiplatform
+from google.cloud import aiplatform_v1
+from google.cloud.aiplatform_v1.types import PredictRequest
 
 # === GCP AUTHENTICATION ===
 service_account_info = st.secrets["gcp_service_account"]
@@ -178,21 +179,33 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
 
 # === CALL VERTEX AI PREDICTION ===
 def get_flood_prediction(month, rainfall_mm, rainfall_3d):
-    endpoint = aiplatform.Endpoint("8324160641333985280")
+    client = aiplatform_v1.PredictionServiceClient()
 
-    instances = [{
+    endpoint = client.endpoint_path(
+        project="pivotal-crawler-459812-m5",
+        location="us-east1",
+        endpoint="8324160641333985280"
+    )
+
+    instance = {
         "month": int(month),
         "rainfall_mm": float(rainfall_mm),
         "rainfall_3d": float(rainfall_3d)
-    }]
+    }
     
 #DEBUG PURPOSE: PRINT PAYLOAD
-    st.write("Vertex AI Payload:", instances)
-    prediction = endpoint.predict(instances=instances)
+    st.write("Vertex AI Payload:", instance)
+    request = PredictRequest(
+        endpoint=endpoint,
+        instances=[instance],
+        parameters={}
+    )
     
 # DEBUT PURPOSE: PRINT RAW PREDICTION RESPONSE
-    st.write("Vertex AI Response:", prediction)
-    return prediction.predictions[0]
+    response = client.predict(request=request)
+    st.write("DEBUG: Vertex AI Response", response)
+
+    return response.predictions[0]
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
