@@ -21,8 +21,7 @@ if st.button("Get Weather Data"):
         "latitude": latitude,
         "longitude": longitude,
         "daily": "rain_sum",
-	    "current": "rain",
-	    "timezone": "Asia/Singapore"
+        "timezone": "Asia/Singapore"
     }
     try:
         responses = openmeteo.weather_api(url, params=params)
@@ -32,27 +31,21 @@ if st.button("Get Weather Data"):
         daily_rain_sum = daily.Variables(0).ValuesAsNumpy()
 
         daily_data = {"date": pd.date_range(
-	    start = pd.to_datetime(daily.Time(), unit = "s", utc = True),
-	    end = pd.to_datetime(daily.TimeEnd(), unit = "s", utc = True),
-	    freq = pd.Timedelta(seconds = daily.Interval()),
-	    inclusive = "left"
+            start=pd.to_datetime(daily.Time(), unit="s", utc=True),
+            end=pd.to_datetime(daily.TimeEnd(), unit="s", utc=True),
+            freq=pd.Timedelta(seconds=daily.Interval()),
+            inclusive="left"
         )}
-
         daily_data["rain_sum"] = daily_rain_sum
 
-        daily_dataframe = pd.DataFrame(data = daily_data)
-	    
-	# Calculate 3-day accumulated rainfall
-	daily_dataframe["3_day_rainfall"] = daily_dataframe["rain_sum"].rolling(window=3).sum()
+        daily_dataframe = pd.DataFrame(data=daily_data)
+
+        # Calculate 3-day accumulated rainfall
+        daily_dataframe["3_day_rainfall"] = daily_dataframe["rain_sum"].rolling(window=3).sum()
 
         st.success(f"Daily Rainfall Data for {latitude}, {longitude}")
         st.dataframe(daily_dataframe)
 
-        print(daily_dataframe)
-
-        st.success(f"Weather data for {latitude}, {longitude}")
-        
-        # Optional: Line chart
         st.line_chart(daily_dataframe.set_index("date")[["rain_sum", "3_day_rainfall"]])
 
     except Exception as e:
