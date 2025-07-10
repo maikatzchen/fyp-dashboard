@@ -1,4 +1,4 @@
-import streamlit as st
+chimport streamlit as st
 import openmeteo_requests
 import pandas as pd
 import requests_cache
@@ -16,7 +16,7 @@ if st.button("Get Weather Data"):
     openmeteo = openmeteo_requests.Client(session=retry_session)
 
     # API Request
-    url = "https://api.open-meteo.com/v1/forecast"
+    url = "https://api.open-meteo.com/v1/archive"
     params = {
         "latitude": latitude,
         "longitude": longitude,
