@@ -1,4 +1,4 @@
-chimport streamlit as st
+import streamlit as st
 import openmeteo_requests
 import pandas as pd
 import requests_cache
