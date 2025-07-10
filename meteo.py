@@ -20,29 +20,28 @@ if st.button("Get Weather Data"):
     params = {
         "latitude": latitude,
         "longitude": longitude,
-        "hourly": ["precipitation", "rain"]
+        "daily": "rain_sum",
+	    "current": "rain",
+	    "timezone": "Asia/Singapore"
     }
     try:
         responses = openmeteo.weather_api(url, params=params)
         response = responses[0]
-        
-        # Hourly data
-        hourly = response.Hourly()
-        hourly_precipitation = hourly.Variables(0).ValuesAsNumpy()
-        hourly_rain = hourly.Variables(1).ValuesAsNumpy()
 
-        hourly_data = {
-            "date": pd.date_range(
-                start=pd.to_datetime(hourly.Time(), unit="s", utc=True),
-                end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
-                freq=pd.Timedelta(seconds=hourly.Interval()),
-                inclusive="left"
-            ),
-            "precipitation": hourly_precipitation,
-            "rain": hourly_rain
-        }
+        daily = response.Daily()
+        daily_rain_sum = daily.Variables(0).ValuesAsNumpy()
 
-        hourly_df = pd.DataFrame(hourly_data)
+        daily_data = {"date": pd.date_range(
+	    start = pd.to_datetime(daily.Time(), unit = "s", utc = True),
+	    end = pd.to_datetime(daily.TimeEnd(), unit = "s", utc = True),
+	    freq = pd.Timedelta(seconds = daily.Interval()),
+	    inclusive = "left"
+        )}
+
+        daily_data["rain_sum"] = daily_rain_sum
+
+        daily_dataframe = pd.DataFrame(data = daily_data)
+        print(daily_dataframe)
 
         st.success(f"Weather data for {latitude}, {longitude}")
         st.dataframe(hourly_df)
