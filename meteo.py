@@ -41,13 +41,19 @@ if st.button("Get Weather Data"):
         daily_data["rain_sum"] = daily_rain_sum
 
         daily_dataframe = pd.DataFrame(data = daily_data)
+	    
+# Calculate 3-day accumulated rainfall
+daily_dataframe["3_day_rainfall"] = daily_dataframe["rain_sum"].rolling(window=3).sum()
+
+        st.success(f"Daily Rainfall Data for {latitude}, {longitude}")
+        st.dataframe(daily_dataframe)
+
         print(daily_dataframe)
 
         st.success(f"Weather data for {latitude}, {longitude}")
-        st.dataframe(hourly_df)
-
+        
         # Optional: Line chart
-        st.line_chart(hourly_df.set_index("date")[["precipitation", "rain"]])
+        st.line_chart(daily_dataframe.set_index("date")[["rain_sum", "3_day_rainfall"]])
 
     except Exception as e:
         st.error(f"Error fetching data: {e}")
