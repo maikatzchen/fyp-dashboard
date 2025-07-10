@@ -42,8 +42,8 @@ if st.button("Get Weather Data"):
 
         daily_dataframe = pd.DataFrame(data = daily_data)
 	    
-# Calculate 3-day accumulated rainfall
-daily_dataframe["3_day_rainfall"] = daily_dataframe["rain_sum"].rolling(window=3).sum()
+	# Calculate 3-day accumulated rainfall
+	daily_dataframe["3_day_rainfall"] = daily_dataframe["rain_sum"].rolling(window=3).sum()
 
         st.success(f"Daily Rainfall Data for {latitude}, {longitude}")
         st.dataframe(daily_dataframe)
