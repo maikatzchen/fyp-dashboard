@@ -16,7 +16,7 @@ if st.button("Get Weather Data"):
     openmeteo = openmeteo_requests.Client(session=retry_session)
 
     # API Request
-    url = "https://api.open-meteo.com/v1/archive"
+    url = "https://historical-forecast-api.open-meteo.com/v1/forecast"
     params = {
         "latitude": latitude,
         "longitude": longitude,
