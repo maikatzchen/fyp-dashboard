@@ -32,7 +32,7 @@ if st.button("Get Weather Data"):
         daily = response.Daily()
         daily_rain_sum = daily.Variables(0).ValuesAsNumpy()
 
-        daily_data = = {"date": pd.date_range(
+        daily_data = {"date": pd.date_range(
 	    start = pd.to_datetime(daily.Time(), unit = "s", utc = True),
 	    end = pd.to_datetime(daily.TimeEnd(), unit = "s", utc = True),
 	    freq = pd.Timedelta(seconds = daily.Interval()),
