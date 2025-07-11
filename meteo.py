@@ -21,7 +21,7 @@ if st.button("Get Weather Data"):
         "latitude": latitude,
         "longitude": longitude,
         "daily": "rain_sum",
-        "past_days":3
+        "past_days":3,
         "timezone": "Asia/Singapore"
     }
     try:
