@@ -44,11 +44,11 @@ def get_openmeteo_rainfall_3km_bound(lat, lon, start_date, end_date):
 
         data = response.json()
         try:
-        dates = data['daily']['time']
-        precipitation = data['daily']['precipitation_sum']
+            dates = data['daily']['time']
+            precipitation = data['daily']['precipitation_sum']
 
-        # Apply bias correction
-        corrected_precipitation = [p * CORRECTION_FACTOR for p in precipitation]
+            # Apply bias correction
+            corrected_precipitation = [p * CORRECTION_FACTOR for p in precipitation]
 
         df = pd.DataFrame({
             "Date": pd.to_datetime(dates),
@@ -56,7 +56,7 @@ def get_openmeteo_rainfall_3km_bound(lat, lon, start_date, end_date):
             "Corrected (mm)": corrected_precipitation
         })
 
-        return df
+            return df
 
     except KeyError:
         st.warning("No rainfall data found for this date range and location.")
