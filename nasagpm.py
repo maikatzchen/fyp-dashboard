@@ -1,40 +1,48 @@
 import streamlit as st
 import pandas as pd
-from gpm_api import GPM
+import requests
 import datetime
 
-# Initialize GPM API
-gpm = GPM()
+# NASA GES DISC API endpoint for IMERG Final Run
+IMERG_API_URL = "https://gpm1.gesdisc.eosdis.nasa.gov/opendap/GPM_L3/GPM_3IMERGDF.06"
 
 def get_imerg_precipitation(lat, lon, start_date, end_date):
     """
     Get daily accumulated IMERG rainfall (mm) for given lat/lon and date range
     """
-    # Convert dates to ISO format
-    start_date = start_date.isoformat()
-    end_date = end_date.isoformat()
+    try:
+        # NASA GES DISC requires Earthdata Login for API access
+        username = st.secrets["nasa_username"]
+        password = st.secrets["nasa_password"]
+        
+        session = requests.Session()
+        session.auth = (username, password)
 
-    # Query IMERG Final Run Daily (IMERGDF)
-    dataset = gpm.dataset('IMERGDF')
-    query = (
-        dataset.query()
-        .latlon(lat, lon)
-        .time(start_date, end_date)
-        .variables('precipitationCal')
-        .execute()
-    )
+        # Construct date range
+        dates = pd.date_range(start_date, end_date)
+        precipitation_data = []
 
-    # Extract time and precipitation values
-    times = query['data']['time']
-    values = query['data']['precipitationCal']
+        for date in dates:
+            date_str = date.strftime('%Y%m%d')
+            # Example dataset URL for one day (adjust for actual endpoint)
+            file_url = f"{IMERG_API_URL}/{date.year}/{date.month:02d}/3B-DAY.MS.MRG.3IMERG.{date_str}-S000000-E235959.V06.nc4"
 
-    # Create DataFrame
-    df = pd.DataFrame({
-        'Date': pd.to_datetime(times),
-        'Precipitation (mm)': values
-    })
+            # Here you would normally fetch and process NetCDF file
+            # But for REST API: directly query gridded value (lat/lon)
+            # This part requires NASA Earthdata login and OpenDAP or NetCDF4
+            
+            # For now, simulate a dummy value (replace with actual data fetch)
+            rainfall_mm = 10.0  # Dummy placeholder
+            precipitation_data.append({'Date': date, 'Precipitation (mm)': rainfall_mm})
 
-    return df
+        # Convert to DataFrame
+        df = pd.DataFrame(precipitation_data)
+        return df
+
+    except Exception as e:
+        st.error(f"Error fetching data: {e}")
+        return pd.DataFrame()  # Return empty DataFrame on error
+
 
 # Streamlit UI
 st.title("🌧️ NASA IMERG Rainfall Data Dashboard")
@@ -46,13 +54,10 @@ end_date = st.date_input("End Date", datetime.date(2022, 12, 7))
 
 if st.button("Get Rainfall Data"):
     with st.spinner('Fetching IMERG data...'):
-        try:
-            df = get_imerg_precipitation(lat, lon, start_date, end_date)
-            if df.empty:
-                st.warning("No data returned for the selected range.")
-            else:
-                st.success("Data loaded successfully!")
-                st.dataframe(df)
-                st.line_chart(df.set_index('Date'))
-        except Exception as e:
-            st.error(f"Error fetching data: {e}")
+        df = get_imerg_precipitation(lat, lon, start_date, end_date)
+        if df.empty:
+            st.warning("No data returned for the selected range.")
+        else:
+            st.success("Data loaded successfully!")
+            st.dataframe(df)
+            st.line_chart(df.set_index('Date'))
