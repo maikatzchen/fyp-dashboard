@@ -3,6 +3,8 @@ import pandas as pd
 import requests
 import datetime
 
+CORRECTION_FACTOR = 0.45
+
 def get_openmeteo_rainfall_3km_bound(lat, lon, start_date, end_date):
     """
     Get average daily rainfall (mm) within 3km bound from Open-Meteo API
@@ -42,25 +44,23 @@ def get_openmeteo_rainfall_3km_bound(lat, lon, start_date, end_date):
 
         data = response.json()
         try:
-            precipitation = data['daily']['precipitation_sum']
-            results.append(precipitation)
-        except KeyError:
-            st.warning(f"No data for Point {i}")
-            continue
+        dates = data['daily']['time']
+        precipitation = data['daily']['precipitation_sum']
 
-    if not results:
-        st.error("❌ No rainfall data found for any point in 3km bound.")
+        # Apply bias correction
+        corrected_precipitation = [p * CORRECTION_FACTOR for p in precipitation]
+
+        df = pd.DataFrame({
+            "Date": pd.to_datetime(dates),
+            "Open-Meteo (mm)": precipitation,
+            "Corrected (mm)": corrected_precipitation
+        })
+
+        return df
+
+    except KeyError:
+        st.warning("No rainfall data found for this date range and location.")
         return pd.DataFrame()
-
-    # Average precipitation across all points
-    averaged = [sum(values) / len(values) for values in zip(*results)]
-    dates = data['daily']['time']
-
-    df = pd.DataFrame({
-        "Date": pd.to_datetime(dates),
-        "Avg Precipitation (mm)": averaged
-    })
-    return df
 
 
 # 🌧️ Streamlit UI
