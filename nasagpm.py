@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from gpm_api import GPM
+from gpm-api import GPM
 import datetime
 
 # Initialize GPM API
