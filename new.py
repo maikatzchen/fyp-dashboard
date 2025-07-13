@@ -176,58 +176,45 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
     except Exception as e:
         st.error(f"[CHIRPS Error] {e}")
         return 0.0
+# === ADD: Get daily rainfall from Open-Meteo ===
+def get_openmeteo_rainfall(lat, lon, start_date, end_date):
+    """
+    Get daily accumulated rainfall (mm) from Open-Meteo API
+    """
+    url = "https://api.open-meteo.com/v1/forecast"
 
-# === AUTO-DETECT MODEL SCHEMA & CALL PREDICTION ===
-def get_flood_prediction(month, rainfall_mm, rainfall_3d):
-    client_options = {"api_endpoint": "us-east1-aiplatform.googleapis.com"}
-    
-    # Initialize Vertex AI clients
-    endpoint_client = EndpointServiceClient(
-    credentials=credentials,
-    client_options=client_options
-)
-    model_client = ModelServiceClient(
-    credentials=credentials,
-    client_options=client_options
-)
-    prediction_client = PredictionServiceClient(
-    credentials=credentials,
-    client_options=client_options
-)
-
-    # Get deployed model info
-    project = "pivotal-crawler-459812-m5"
-    endpoint_id = "8324160641333985280"
-    location = "us-east1"
-    endpoint_name = f"projects/{project}/locations/{location}/endpoints/{endpoint_id}"
-
-    endpoint = endpoint_client.get_endpoint(name=endpoint_name)
-    deployed_model = endpoint.deployed_models[0]  # Assuming only 1 deployed model
-
-    # Get model details (schema)
-    model = model_client.get_model(name=deployed_model.model)
-    
-    # === PREPARE PREDICTION PAYLOAD ===
-    # You may need to adjust field names here based on schema
-    instance_dict = {
-        "month": str(month),
-        "rainfall_mm": str(rainfall_mm),
-        "rainfall_3d": str(rainfall_3d)
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "daily": "precipitation_sum",
+        "timezone": "Asia/Kuala_Lumpur",
+        "start_date": start_date.strftime("%Y-%m-%d"),
+        "end_date": end_date.strftime("%Y-%m-%d")
     }
-    instances = [instance_dict]
 
-    # Call prediction
-    response = prediction_client.predict(
-        endpoint=endpoint_name,
-        instances=instances
-    )
+    response = requests.get(url, params=params)
 
-    predictions = response.predictions
-    if predictions:
-        return predictions[0]
-    else:
-        st.error("❌ No predictions returned.")
+    if response.status_code != 200:
+        st.error(f"[Open-Meteo API error] {response.status_code}: {response.text}")
         return None
+
+    try:
+        data = response.json()
+        precipitation = data['daily']['precipitation_sum']
+        dates = data['daily']['time']
+
+        # Find rainfall for selected_date
+        if start_date.strftime("%Y-%m-%d") in dates:
+            index = dates.index(start_date.strftime("%Y-%m-%d"))
+            return precipitation[index], "Open-Meteo"
+        else:
+            st.warning("⚠️ Open-Meteo returned no data for selected date.")
+            return None
+    except KeyError:
+        st.warning("⚠️ Missing data in Open-Meteo response.")
+        return None
+
+
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
@@ -249,10 +236,21 @@ lat, lon = districts[selected_district]
 # === Real-Time Weather Panel ===
 st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
 
+# === Sidebar Option ===
+use_openmeteo = st.sidebar.checkbox("🌐 Use Open-Meteo API for Daily Rainfall?", value=False)
+
 # Get real-time values
 month = selected_date.month
 rainfall_hour = get_openweather_rainfall(lat, lon)
-rainfall_day, source = get_daily_rainfall_gee(lat, lon, selected_date)
+if use_openmeteo:
+    openmeteo_result = get_openmeteo_rainfall(lat, lon, selected_date, selected_date)
+    if openmeteo_result:
+        rainfall_day, source = openmeteo_result
+    else:
+        rainfall_day, source = get_daily_rainfall_gee(lat, lon, selected_date)
+else:
+    rainfall_day, source = get_daily_rainfall_gee(lat, lon, selected_date)
+
 rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
 col1, col2, col3 = st.columns(3)
