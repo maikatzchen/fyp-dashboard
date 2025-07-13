@@ -3,7 +3,7 @@ import pandas as pd
 import requests
 import datetime
 
-CORRECTION_FACTOR = 0.45
+CORRECTION_FACTOR = 0.8633
 
 def get_openmeteo_rainfall_3km_bound(lat, lon, start_date, end_date):
     """
