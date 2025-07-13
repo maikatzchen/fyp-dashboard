@@ -3,73 +3,71 @@ import pandas as pd
 import requests
 import datetime
 
-CORRECTION_FACTOR = 0.8633
+CORRECTION_FACTOR = 0.45  # Bias correction factor
 
-def get_openmeteo_rainfall_3km_bound(lat, lon, start_date, end_date):
+def get_openmeteo_rainfall_5x5_grid(lat, lon, start_date, end_date):
     """
-    Get average daily rainfall (mm) within 3km bound from Open-Meteo API
+    Get average daily rainfall (mm) within 3km bound using 5x5 grid
     """
-    st.info(f"Fetching rainfall data within ~3km radius of ({lat}, {lon})")
+    st.info(f"Fetching rainfall data within ~3km radius of ({lat}, {lon}) using 5x5 grid")
 
-    # Approximate 3km in degrees
-    offset_deg = 0.027  # ~3km
-    offsets = [
-        (0, 0),  # Center point
-        (offset_deg, offset_deg),    # NE
-        (offset_deg, -offset_deg),   # NW
-        (-offset_deg, offset_deg),   # SE
-        (-offset_deg, -offset_deg)   # SW
-    ]
+    # Approximate 3km in degrees (~0.027 degrees)
+    offset_deg = 0.0135  # 3km / 2 divided across 2 grid steps
+    grid_range = [-2, -1, 0, 1, 2]  # For 5x5 grid
 
-    all_precip = []
+    all_df = []
 
-    for i, (dlat, dlon) in enumerate(offsets, start=1):
-        lat_offset = lat + dlat
-        lon_offset = lon + dlon
-        st.write(f"📍 Querying Point {i}: ({lat_offset:.5f}, {lon_offset:.5f})")
+    point_num = 1
+    for dx in grid_range:
+        for dy in grid_range:
+            lat_offset = lat + (dx * offset_deg)
+            lon_offset = lon + (dy * offset_deg)
+            st.write(f"📍 Querying Point {point_num}: ({lat_offset:.5f}, {lon_offset:.5f})")
+            point_num += 1
 
-        url = "https://api.open-meteo.com/v1/forecast"
-        params = {
-            "latitude": lat_offset,
-            "longitude": lon_offset,
-            "daily": "precipitation_sum",
-            "timezone": "Asia/Kuala_Lumpur",
-            "start_date": start_date.strftime("%Y-%m-%d"),
-            "end_date": end_date.strftime("%Y-%m-%d")
-        }
+            url = "https://api.open-meteo.com/v1/forecast"
+            params = {
+                "latitude": lat_offset,
+                "longitude": lon_offset,
+                "daily": "precipitation_sum",
+                "timezone": "Asia/Kuala_Lumpur",
+                "start_date": start_date.strftime("%Y-%m-%d"),
+                "end_date": end_date.strftime("%Y-%m-%d")
+            }
 
-        response = requests.get(url, params=params)
-        if response.status_code != 200:
-            st.error(f"API error at Point {i}: {response.status_code}")
-            continue
+            response = requests.get(url, params=params)
+            if response.status_code != 200:
+                st.error(f"API error at Point {point_num-1}: {response.status_code}")
+                continue
 
-        data = response.json()
-        try:
-            dates = data['daily']['time']
-            precipitation = data['daily']['precipitation_sum']
-            all_precip.append(precipitation)
-        except KeyError:
-            st.warning(f"No rainfall data at Point {i}")
-            continue
+            data = response.json()
+            try:
+                dates = data['daily']['time']
+                precipitation = data['daily']['precipitation_sum']
 
-    if not all_precip:
-        st.error("No data found for any points.")
+                df = pd.DataFrame({
+                    "Date": pd.to_datetime(dates),
+                    "Precipitation (mm)": precipitation
+                })
+                all_df.append(df)
+
+            except KeyError:
+                st.warning(f"No rainfall data found at Point {point_num-1}")
+                continue
+
+    if not all_df:
+        st.error("No data fetched for any grid points.")
         return pd.DataFrame()
 
-    # Average precipitation across all points
-    avg_precip = [sum(day) / len(all_precip) for day in zip(*all_precip)]
-    corrected_precip = [p * CORRECTION_FACTOR for p in avg_precip]
+    # Combine all grid data
+    combined_df = pd.concat(all_df).groupby("Date").mean().reset_index()
+    combined_df["Corrected (mm)"] = combined_df["Precipitation (mm)"] * CORRECTION_FACTOR
 
-    df = pd.DataFrame({
-        "Date": pd.to_datetime(dates),
-        "Open-Meteo Avg (mm)": avg_precip,
-        "Corrected (mm)": corrected_precip
-    })
+    return combined_df
 
-    return df
 
 # 🌧️ Streamlit UI
-st.title("🌧️ Real-time Rainfall Data (Open-Meteo API with 3km Bound)")
+st.title("🌧️ Real-time Rainfall Data (Open-Meteo API with 5x5 Grid)")
 
 lat = st.number_input("Enter Latitude", value=5.4204, format="%.5f")  # Default: Terengganu
 lon = st.number_input("Enter Longitude", value=103.1025, format="%.5f")
@@ -77,11 +75,11 @@ start_date = st.date_input("Start Date", datetime.date.today() - datetime.timede
 end_date = st.date_input("End Date", datetime.date.today())
 
 if st.button("Get Rainfall Data"):
-    with st.spinner('Fetching rainfall data for 3km bound...'):
-        df = get_openmeteo_rainfall_3km_bound(lat, lon, start_date, end_date)
+    with st.spinner('Fetching rainfall data for 5x5 grid...'):
+        df = get_openmeteo_rainfall_5x5_grid(lat, lon, start_date, end_date)
         if df.empty:
             st.warning("No data returned for the selected range.")
         else:
             st.success("✅ Data loaded successfully!")
             st.dataframe(df)
-            st.line_chart(df.set_index('Date'))
+            st.line_chart(df.set_index('Date')[["Precipitation (mm)", "Corrected (mm)"]])
