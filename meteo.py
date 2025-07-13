@@ -16,14 +16,13 @@ if st.button("Get Weather Data"):
     openmeteo = openmeteo_requests.Client(session=retry_session)
 
     # API Request
-    url = "https://historical-forecast-api.open-meteo.com/v1/forecast"
+    url = "https://api.open-meteo.com/v1/forecast"
     params = {
-	"latitude": 52.52,
-	"longitude": 13.41,
-	"start_date": "2022-01-01",
-	"end_date": "2022-12-31",
-	"daily": "rain_sum",
-	"timezone": "Asia/Singapore"
+        "latitude": latitude,
+        "longitude": longitude,
+        "daily": "rain_sum",
+        "past_days":3,
+        "timezone": "Asia/Singapore"
     }
     try:
         responses = openmeteo.weather_api(url, params=params)
@@ -32,13 +31,14 @@ if st.button("Get Weather Data"):
         daily = response.Daily()
         daily_rain_sum = daily.Variables(0).ValuesAsNumpy()
 
-        daily_data = {"date": pd.date_range(
-	    start = pd.to_datetime(daily.Time(), unit = "s", utc = True),
-	    end = pd.to_datetime(daily.TimeEnd(), unit = "s", utc = True),
-	    freq = pd.Timedelta(seconds = daily.Interval()),
-	    inclusive = "left"
-        )}
-        
+        daily_data = {
+        "date": pd.date_range(
+        start=pd.to_datetime(daily.Time(), unit="s", utc=True).tz_convert("Europe/Berlin"),
+        end=pd.to_datetime(daily.TimeEnd(), unit="s", utc=True).tz_convert("Europe/Berlin"),
+        freq=pd.Timedelta(seconds=daily.Interval()),
+        inclusive="left"
+        )
+    }
         daily_data["rain_sum"] = daily_rain_sum
 
         daily_dataframe = pd.DataFrame(data=daily_data)
