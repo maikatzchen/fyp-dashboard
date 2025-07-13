@@ -8,6 +8,7 @@ retry-requests
 openmeteo-requests
 streamlit-folium
 geemap
+gpm-api
 earthengine-api
 google-auth-oauthlib
 google-auth-httplib2
