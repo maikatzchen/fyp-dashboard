@@ -3,74 +3,80 @@ import pandas as pd
 import requests
 import datetime
 
-TOMORROW_API_KEY = "YOUR_API_KEY_HERE"
-
-def get_tomorrow_rainfall_area(lat, lon, start_date, end_date, radius_km=3):
+def get_openmeteo_rainfall_3km_bound(lat, lon, start_date, end_date):
     """
-    Get daily rainfall (mm) from Tomorrow.io API within a radius (in km)
-    around given lat/lon
+    Get average daily rainfall (mm) within 3km bound from Open-Meteo API
     """
-    # Approx. degrees for radius (1° ~ 111km)
-    delta_deg = radius_km / 111.0
+    st.info(f"Fetching rainfall data within ~3km radius of ({lat}, {lon})")
 
-    # Bounding box: [west,south,east,north]
-    west = lon - delta_deg
-    south = lat - delta_deg
-    east = lon + delta_deg
-    north = lat + delta_deg
+    # Approximate 3km in degrees
+    offset_deg = 0.027  # ~3km
+    offsets = [
+        (0, 0),  # Center point
+        (offset_deg, offset_deg),    # NE
+        (offset_deg, -offset_deg),   # NW
+        (-offset_deg, offset_deg),   # SE
+        (-offset_deg, -offset_deg)   # SW
+    ]
 
-    url = "https://api.tomorrow.io/v4/weather/history/recent"
+    results = []
+    for i, (dlat, dlon) in enumerate(offsets, start=1):
+        lat_offset = lat + dlat
+        lon_offset = lon + dlon
+        st.write(f"📍 Querying Point {i}: ({lat_offset:.5f}, {lon_offset:.5f})")
 
-    params = {
-        "apikey": TOMORROW_API_KEY,
-        "fields": "precipitationAmount",
-        "timesteps": "1d",
-        "startTime": start_date.strftime("%Y-%m-%dT00:00:00Z"),
-        "endTime": end_date.strftime("%Y-%m-%dT23:59:59Z"),
-        "bbox": f"{south},{west},{north},{east}",
-        "units": "metric"
-    }
+        url = "https://api.open-meteo.com/v1/forecast"
+        params = {
+            "latitude": lat_offset,
+            "longitude": lon_offset,
+            "daily": "precipitation_sum",
+            "timezone": "Asia/Kuala_Lumpur",
+            "start_date": start_date.strftime("%Y-%m-%d"),
+            "end_date": end_date.strftime("%Y-%m-%d")
+        }
 
-    response = requests.get(url, params=params)
+        response = requests.get(url, params=params)
+        if response.status_code != 200:
+            st.error(f"API error at Point {i}: {response.status_code}")
+            continue
 
-    if response.status_code != 200:
-        st.error(f"API error: {response.status_code} - {response.text}")
+        data = response.json()
+        try:
+            precipitation = data['daily']['precipitation_sum']
+            results.append(precipitation)
+        except KeyError:
+            st.warning(f"No data for Point {i}")
+            continue
+
+    if not results:
+        st.error("❌ No rainfall data found for any point in 3km bound.")
         return pd.DataFrame()
 
-    data = response.json()
-    st.write(data)  # Debug: See raw API response
+    # Average precipitation across all points
+    averaged = [sum(values) / len(values) for values in zip(*results)]
+    dates = data['daily']['time']
 
-    try:
-        # Extract daily data (average for the area)
-        intervals = data['data']['timelines'][0]['intervals']
-
-        df = pd.DataFrame([{
-            "Date": interval['startTime'][:10],
-            "Precipitation (mm)": interval['values']['precipitationAmount']
-        } for interval in intervals])
-
-        df['Date'] = pd.to_datetime(df['Date'])
-        return df
-
-    except (KeyError, IndexError):
-        st.warning("No rainfall data found for this area and date range.")
-        return pd.DataFrame()
+    df = pd.DataFrame({
+        "Date": pd.to_datetime(dates),
+        "Avg Precipitation (mm)": averaged
+    })
+    return df
 
 
-# Streamlit UI
-st.title("🌧️ Rainfall Data (Tomorrow.io with 3km Bound)")
+# 🌧️ Streamlit UI
+st.title("🌧️ Real-time Rainfall Data (Open-Meteo API with 3km Bound)")
 
-lat = st.number_input("Enter Latitude", value=4.7500)  # Dungun example
-lon = st.number_input("Enter Longitude", value=103.4100)
+lat = st.number_input("Enter Latitude", value=5.4204, format="%.5f")  # Default: Terengganu
+lon = st.number_input("Enter Longitude", value=103.1025, format="%.5f")
 start_date = st.date_input("Start Date", datetime.date.today() - datetime.timedelta(days=7))
 end_date = st.date_input("End Date", datetime.date.today())
 
 if st.button("Get Rainfall Data"):
-    with st.spinner('Fetching Tomorrow.io rainfall data for 3 km bound...'):
-        df = get_tomorrow_rainfall_area(lat, lon, start_date, end_date)
+    with st.spinner('Fetching rainfall data for 3km bound...'):
+        df = get_openmeteo_rainfall_3km_bound(lat, lon, start_date, end_date)
         if df.empty:
-            st.warning("No data returned for the selected area and range.")
+            st.warning("No data returned for the selected range.")
         else:
-            st.success("Data loaded successfully!")
+            st.success("✅ Data loaded successfully!")
             st.dataframe(df)
             st.line_chart(df.set_index('Date'))
