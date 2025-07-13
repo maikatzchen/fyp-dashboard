@@ -29,7 +29,7 @@ def get_openmeteo_rainfall_3km_bound(lat, lon, start_date, end_date):
         params = {
             "latitude": lat_offset,
             "longitude": lon_offset,
-            "daily": "precipitation_sum",
+            "daily": "rain_sum",
             "timezone": "Asia/Kuala_Lumpur",
             "start_date": start_date.strftime("%Y-%m-%d"),
             "end_date": end_date.strftime("%Y-%m-%d")
@@ -42,7 +42,7 @@ def get_openmeteo_rainfall_3km_bound(lat, lon, start_date, end_date):
 
         data = response.json()
         try:
-            precipitation = data['daily']['precipitation_sum']
+            precipitation = data['daily']['rain_sum']
             results.append(precipitation)
         except KeyError:
             st.warning(f"No data for Point {i}")
@@ -58,7 +58,7 @@ def get_openmeteo_rainfall_3km_bound(lat, lon, start_date, end_date):
 
     df = pd.DataFrame({
         "Date": pd.to_datetime(dates),
-        "Avg Precipitation (mm)": averaged
+        "Avg Rainfall (mm)": averaged
     })
     return df
 
