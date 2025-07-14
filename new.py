@@ -93,7 +93,7 @@ def get_3day_rainfall_chirps(lat, lon, end_date):
         result = rainfall_image.reduceRegion(
             reducer=ee.Reducer.mean(),
             geometry=region,
-            scale=5000,
+            scale=10000,
             maxPixels=1e9
         )
 
@@ -167,7 +167,7 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         result = daily_precip.reduceRegion(
             reducer=ee.Reducer.mean(),
             geometry=region,
-            scale=5000,
+            scale=10000,
             maxPixels=1e9
         )
 
@@ -293,7 +293,7 @@ folium.Marker(
 # --- VISUALIZE WITH 5KM RADIUS ---
 folium.Circle(
     location=[lat, lon],
-    radius=5000,  # 5 km
+    radius=10000,  # 5 km
     color="blue",
     fill=True,
     fill_opacity=0.2,
