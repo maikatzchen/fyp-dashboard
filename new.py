@@ -8,6 +8,8 @@ import datetime
 from datetime import date
 import ee
 import ast
+import folium
+from streamlit_folium import st_folium
 from google.oauth2 import service_account
 from google.cloud import aiplatform_v1
 from google.protobuf import json_format
@@ -281,8 +283,14 @@ col2.metric(
 
 
 # === Optional Map (showing location) ===
-df = pd.DataFrame({"lat": [lat], "lon": [lon]})
-st.map(df)
+m = folium.Map(location=[lat, lon], zoom_start=10)
+folium.Marker(
+    [lat, lon],
+    popup=f"<b>{selected_district}</b><br>Rainfall Today: {rainfall_day} mm<br>3-Day Rainfall: {rainfall_3d} mm",
+    icon=folium.Icon(color="red", icon="info-sign")
+).add_to(m)
+
+st_folium(m, width=700, height=500)
 
 if st.button("Predict Flood Risk"):
     with st.spinner("Predicting flood risk..."):
