@@ -213,7 +213,7 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
         if index >= 2:
                 rainfall_3d = sum(precipitation[index - 2:index + 1])  # 2 days before + current day
             else:
-                rainfall_3d = None  # Not enough data for 3-day accumulation
+                    rainfall_3d = None  # Not enough data for 3-day accumulation
 
             return {
                 "daily_rainfall": daily_rainfall,
