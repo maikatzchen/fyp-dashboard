@@ -272,7 +272,7 @@ else:
     rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
 col1, col2 = st.columns(2)
-col3.metric("Current Rainfall (mm)", f"{rainfall_hour:.2f}")
+# col3.metric("Current Rainfall (mm)", f"{rainfall_hour:.2f}")
 col1.metric(f"Rainfall (mm) [{source}]", f"{rainfall_day:.2f}")
 col2.metric(
     "3-Day Rainfall (mm)",
