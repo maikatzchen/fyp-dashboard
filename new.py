@@ -271,10 +271,10 @@ else:
     rainfall_day, source = get_daily_rainfall_gee(lat, lon, selected_date)
     rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
-col1, col2, col3 = st.columns(3)
-col1.metric("Current Rainfall (mm)", f"{rainfall_hour:.2f}")
-col2.metric(f"Rainfall (mm) [{source}]", f"{rainfall_day:.2f}")
-col3.metric(
+col1, col2 = st.columns(2)
+col3.metric("Current Rainfall (mm)", f"{rainfall_hour:.2f}")
+col1.metric(f"Rainfall (mm) [{source}]", f"{rainfall_day:.2f}")
+col2.metric(
     "3-Day Rainfall (mm)",
     f"{rainfall_3d:.2f}" if rainfall_3d is not None else "N/A"
 )
