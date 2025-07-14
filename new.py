@@ -212,13 +212,13 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
             daily_rainfall = precipitation[index]
         if index >= 2:
                 rainfall_3d = sum(precipitation[index - 2:index + 1])  # 2 days before + current day
-            else:
-                    rainfall_3d = None  # Not enough data for 3-day accumulation
+        else:
+            rainfall_3d = None  # Not enough data for 3-day accumulation
 
-            return {
-                "daily_rainfall": daily_rainfall,
-                "rainfall_3d": rainfall_3d,
-                "source": "Open-Meteo"
+        return {
+            "daily_rainfall": daily_rainfall,
+            "rainfall_3d": rainfall_3d,
+            "source": "Open-Meteo"
             }
         else:
             st.warning("⚠️ Open-Meteo returned no data for selected date.")
