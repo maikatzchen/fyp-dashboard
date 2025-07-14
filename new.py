@@ -180,19 +180,20 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
 # === ADD: Get daily rainfall from Open-Meteo ===
 def get_openmeteo_rainfall(lat, lon, start_date, end_date):
     """
-    Get daily accumulated rainfall (mm) from Open-Meteo API
+    Get daily accumulated rainfall (mm) and 3-day accumulated rainfall (mm before selected_date) from Open-Meteo API
     """
     import datetime
-    start_date = start_date - datetime.timedelta(days=3)
-    
-    url = "https://api.open-meteo.com/v1/forecast"
 
+    # Fetch 3 days before start_date up to selected_date
+    start_date_api = start_date - datetime.timedelta(days=3)
+
+    url = "https://api.open-meteo.com/v1/forecast"
     params = {
         "latitude": lat,
         "longitude": lon,
         "daily": "precipitation_sum",
         "timezone": "Asia/Kuala_Lumpur",
-        "start_date": start_date.strftime("%Y-%m-%d"),
+        "start_date": start_date_api.strftime("%Y-%m-%d"),
         "end_date": end_date.strftime("%Y-%m-%d")
     }
 
@@ -209,10 +210,11 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
 
         selected_date_str = start_date.strftime("%Y-%m-%d")
 
-        # Find rainfall for selected_date
         if selected_date_str in dates:
-            index = dates.index(start_date.strftime("%Y-%m-%d"))
+            index = dates.index(selected_date_str)
             daily_rainfall = precipitation[index]
+
+            # Get rainfall for 3 days before selected_date
             if index >= 3:
                 rainfall_3d = sum(precipitation[index - 3:index])
             else:
@@ -229,8 +231,6 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
     except KeyError:
         st.warning("⚠️ Missing data in Open-Meteo response.")
         return None
-
-
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
