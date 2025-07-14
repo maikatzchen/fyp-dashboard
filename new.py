@@ -182,6 +182,9 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
     """
     Get daily accumulated rainfall (mm) from Open-Meteo API
     """
+    import datetime
+    start_date_api = start_date - datetime.timedelta(days=3)
+    
     url = "https://api.open-meteo.com/v1/forecast"
 
     params = {
@@ -210,8 +213,8 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
         if selected_date_str in dates:
             index = dates.index(start_date.strftime("%Y-%m-%d"))
             daily_rainfall = precipitation[index]
-            if index >= 2:
-                rainfall_3d = sum(precipitation[index - 2:index + 1])  # 2 days before + current day
+            if index >= 3:
+                rainfall_3d = sum(precipitation[index - 3:index])
             else:
                 rainfall_3d = None  # Not enough data for 3-day accumulation
 
