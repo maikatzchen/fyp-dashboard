@@ -183,7 +183,7 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
     Get daily accumulated rainfall (mm) from Open-Meteo API
     """
     import datetime
-    start_date_api = start_date - datetime.timedelta(days=3)
+    start_date = start_date - datetime.timedelta(days=3)
     
     url = "https://api.open-meteo.com/v1/forecast"
 
