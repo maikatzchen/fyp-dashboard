@@ -220,9 +220,9 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
             "rainfall_3d": rainfall_3d,
             "source": "Open-Meteo"
             }
-        else:
-            st.warning("⚠️ Open-Meteo returned no data for selected date.")
-            return None
+            else:
+                st.warning("⚠️ Open-Meteo returned no data for selected date.")
+                return None
     except KeyError:
         st.warning("⚠️ Missing data in Open-Meteo response.")
         return None
