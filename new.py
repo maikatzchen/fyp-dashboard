@@ -290,8 +290,19 @@ folium.Marker(
     icon=folium.Icon(color="red", icon="info-sign")
 ).add_to(m)
 
-st_folium(m, width=700, height=500)
+# --- VISUALIZE WITH 5KM RADIUS ---
+folium.Circle(
+    location=[lat, lon],
+    radius=5000,  # 5 km
+    color="blue",
+    fill=True,
+    fill_opacity=0.2,
+    popup="5 km radius"
+).add_to(m)
 
+st_folium(m, width=1000, height=500)
+
+# --- PREDICTION BLOCK ---
 if st.button("Predict Flood Risk"):
     with st.spinner("Predicting flood risk..."):
         result = get_flood_prediction(month, rainfall_day, rainfall_3d)
