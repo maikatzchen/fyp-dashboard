@@ -258,11 +258,15 @@ rainfall_hour = get_openweather_rainfall(lat, lon)
 if use_openmeteo:
     openmeteo_result = get_openmeteo_rainfall(lat, lon, selected_date, selected_date)
     if openmeteo_result:
-        rainfall_day, source = openmeteo_result
+        rainfall_day = openmeteo_result["daily_rainfall"]
+        rainfall_3d = openmeteo_result["rainfall_3d"]  # Use Open-Meteo's 3-day rainfall
+        source = openmeteo_result["source"]
     else:
         rainfall_day, source = get_daily_rainfall_gee(lat, lon, selected_date)
+        rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 else:
     rainfall_day, source = get_daily_rainfall_gee(lat, lon, selected_date)
+    rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
 rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
