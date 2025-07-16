@@ -1,5 +1,6 @@
 # for testing purpose using IMERG and CHIRPS as fallback with error display for debugging 
 
+import os
 import pandas as pd
 import json
 import streamlit as st
@@ -18,9 +19,18 @@ from google.cloud.aiplatform_v1.types import PredictRequest
 from google.cloud.aiplatform_v1.services.endpoint_service import EndpointServiceClient
 from google.cloud.aiplatform_v1.services.model_service import ModelServiceClient
 from google.cloud.aiplatform_v1.services.prediction_service import PredictionServiceClient
+from google.cloud import secretmanager_v1 as secretmanager
 
 # === GCP AUTHENTICATION ===
-service_account_info = st.secrets["gcp_service_account"]
+def access_secret(secret_id):
+    client = secretmanager.SecretManagerServiceClient()
+    project_id = "pivotal-crawler-459812-m5"
+    name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
+    response = client.access_secret_version(request={"name": name})
+    payload = response.payload.data.decode("UTF-8")
+    return payload
+
+service_account_info = json.loads(access_secret("gcp_service_account"))
 credentials = service_account.Credentials.from_service_account_info(service_account_info)
 
 # === LOAD GEE CREDENTIALS FROM STREAMLIT SECRETS ===
