@@ -355,7 +355,7 @@ with map_col:
         popup="5 km radius"
     ).add_to(m)
 
-    st_folium(m, width=700, height=500)
+    st_folium(m, width=1000, height=500)
 
 with predict_col:
     st.markdown("### 🎯 Flood Prediction")
