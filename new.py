@@ -38,25 +38,6 @@ def initialize_ee():
     ee.Initialize(credentials.with_scopes(["https://www.googleapis.com/auth/cloud-platform"]))
 initialize_ee()
 
-# === FUNCTION: Get 1-hour rainfall from OpenWeatherMap ===
-
-OPENWEATHER_API_KEY = st.secrets["openweather"]["api_key"]
-
-def get_openweather_rainfall(lat, lon):
-    url = "https://api.openweathermap.org/data/2.5/weather"
-    params = {
-        "lat": lat,
-        "lon": lon,
-        "appid": OPENWEATHER_API_KEY,
-        "units": "metric"
-    }
-    response = requests.get(url, params=params)
-    data = response.json()
-    try:
-        return data["rain"].get("1h", 0.0)
-    except:
-        return 0.0
-
 # === FUNCTION: Get 3-day rainfall from GEE ===
 def get_gee_3day_rainfall(lat, lon, end_date):
     try:
@@ -321,7 +302,6 @@ use_openmeteo = st.sidebar.checkbox("🌐 Use Open-Meteo API for Daily Rainfall?
 
 # Get real-time values
 month = selected_date.month
-rainfall_hour = get_openweather_rainfall(lat, lon)
 if use_openmeteo:
     openmeteo_result = get_openmeteo_rainfall(lat, lon, selected_date, selected_date)
     if openmeteo_result:
