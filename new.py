@@ -1,5 +1,3 @@
-# for testing purpose using IMERG and CHIRPS as fallback with error display for debugging 
-
 import os
 import pandas as pd
 import json
@@ -46,6 +44,15 @@ def initialize_ee():
 
 initialize_ee()
 
+@st.cache_resource
+def get_vertex_ai_clients():
+    client_options = {"api_endpoint": "us-east1-aiplatform.googleapis.com"}
+    endpoint_client = EndpointServiceClient(credentials=credentials, client_options=client_options)
+    model_client = ModelServiceClient(credentials=credentials, client_options=client_options)
+    prediction_client = PredictionServiceClient(credentials=credentials, client_options=client_options)
+    return endpoint_client, model_client, prediction_client
+
+endpoint_client, model_client, prediction_client = get_vertex_ai_clients()
 
 # === FUNCTION: Get 3-day rainfall from GEE ===
 def get_gee_3day_rainfall(lat, lon, end_date):
@@ -236,21 +243,8 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
 
 # === AUTO-DETECT MODEL SCHEMA & CALL PREDICTION ===
 def get_flood_prediction(month, rainfall_mm, rainfall_3d):
-    client_options = {"api_endpoint": "us-east1-aiplatform.googleapis.com"}
-    
-    # Initialize Vertex AI clients
-    endpoint_client = EndpointServiceClient(
-    credentials=credentials,
-    client_options=client_options
-)
-    model_client = ModelServiceClient(
-    credentials=credentials,
-    client_options=client_options
-)
-    prediction_client = PredictionServiceClient(
-    credentials=credentials,
-    client_options=client_options
-)
+    # Use cached clients
+    global endpoint_client, model_client, prediction_client
 
     # Get deployed model info
     project = "pivotal-crawler-459812-m5"
@@ -259,13 +253,12 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     endpoint_name = f"projects/{project}/locations/{location}/endpoints/{endpoint_id}"
 
     endpoint = endpoint_client.get_endpoint(name=endpoint_name)
-    deployed_model = endpoint.deployed_models[0]  
+    deployed_model = endpoint.deployed_models[0]
 
     # Get model details (schema)
     model = model_client.get_model(name=deployed_model.model)
     
     # === PREPARE PREDICTION PAYLOAD ===
-    # You may need to adjust field names here based on schema
     instance_dict = {
         "month": str(month),
         "rainfall_mm": str(rainfall_mm),
@@ -285,6 +278,7 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     else:
         st.error("❌ No predictions returned.")
         return None
+
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
