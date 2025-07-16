@@ -359,13 +359,13 @@ with map_col:
     st_folium(m, width=700, height=500)
 
 with predict_col:
-    st.markdown("### 🔥 Flood Prediction")
+    st.markdown("### 🎯 Flood Prediction")
     if st.button("Predict Flood Risk"):
         with st.spinner("Predicting flood risk..."):
             result = get_flood_prediction(month, rainfall_day, rainfall_3d)
 
             result_dict = dict(result)
-            st.write("📦 Raw Prediction Response (dict):", result_dict)
+            
 
             classes_raw = result_dict.get("classes", "[]")
             scores_raw = result_dict.get("scores", "[]")
