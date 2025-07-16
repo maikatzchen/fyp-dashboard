@@ -19,7 +19,7 @@ from google.cloud.aiplatform_v1.types import PredictRequest
 from google.cloud.aiplatform_v1.services.endpoint_service import EndpointServiceClient
 from google.cloud.aiplatform_v1.services.model_service import ModelServiceClient
 from google.cloud.aiplatform_v1.services.prediction_service import PredictionServiceClient
-from google.cloud import secretmanager_v1 as secretmanager
+from google.cloud import secretmanager
 
 # === GCP AUTHENTICATION ===
 def access_secret(secret_id):
