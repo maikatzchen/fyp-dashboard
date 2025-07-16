@@ -415,3 +415,10 @@ with predict_col:
                     st.write("🔎 Classes:", classes)
             else:
                 st.error("❌ Prediction response missing scores or classes.")
+
+import os
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))  # Cloud Run provides $PORT
+    st.run(host="0.0.0.0", port=port)
+
