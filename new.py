@@ -34,9 +34,18 @@ service_account_info = json.loads(access_secret("gcp_service_account"))
 credentials = service_account.Credentials.from_service_account_info(service_account_info)
 
 # === LOAD GEE CREDENTIALS FROM STREAMLIT SECRETS ===
+import urllib3
+
+# Patch TrafficPolice to avoid connection deadlocks
+if hasattr(urllib3, "util") and hasattr(urllib3.util, "traffic_police"):
+    urllib3.util.traffic_police._enabled = False
+
+@st.cache_resource
 def initialize_ee():
     ee.Initialize(credentials.with_scopes(["https://www.googleapis.com/auth/cloud-platform"]))
+
 initialize_ee()
+
 
 # === FUNCTION: Get 3-day rainfall from GEE ===
 def get_gee_3day_rainfall(lat, lon, end_date):
