@@ -313,8 +313,7 @@ def show_probability_pie(flood_percent, no_flood_percent):
 
     st.plotly_chart(fig, use_container_width=True)
 
-# Show visual chart
-show_probability_pie(flood_percent, no_flood_percent)
+
 
 
 # === STREAMLIT UI ===
@@ -430,6 +429,9 @@ with predict_col:
 
                     flood_percent = round(flood_prob * 100, 2)
                     no_flood_percent = round(no_flood_prob * 100, 2)
+
+                    # Show visual chart
+                    show_probability_pie(flood_percent, no_flood_percent)
 
                     st.metric("🌊 Flood Probability", f"{flood_percent}%")
                     st.metric("☀️ No Flood Probability", f"{no_flood_percent}%")
