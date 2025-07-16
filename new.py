@@ -336,79 +336,82 @@ col2.metric(
 
 
 # === Optional Map (showing location) ===
-m = folium.Map(location=[lat, lon], zoom_start=10)
-folium.Marker(
-    [lat, lon],
-    popup=f"<b>{selected_district}</b><br>Rainfall Today: {rainfall_day} mm<br>3-Day Rainfall: {rainfall_3d} mm",
-    icon=folium.Icon(color="red", icon="info-sign")
-).add_to(m)
+map_col, predict_col = st.columns([2, 1])  # Wider map, narrower prediction block
 
-# --- VISUALIZE WITH 5KM RADIUS ---
-folium.Circle(
-    location=[lat, lon],
-    radius=10000,  # 5 km
-    color="blue",
-    fill=True,
-    fill_opacity=0.2,
-    popup="5 km radius"
-).add_to(m)
+with map_col:
+    m = folium.Map(location=[lat, lon], zoom_start=10)
+    folium.Marker(
+        [lat, lon],
+        popup=f"<b>{selected_district}</b><br>Rainfall Today: {rainfall_day} mm<br>3-Day Rainfall: {rainfall_3d} mm",
+        icon=folium.Icon(color="red", icon="info-sign")
+    ).add_to(m)
 
-st_folium(m, width=1000, height=500)
+    # --- VISUALIZE WITH 5KM RADIUS ---
+    folium.Circle(
+        location=[lat, lon],
+        radius=10000,  # 5 km
+        color="blue",
+        fill=True,
+        fill_opacity=0.2,
+        popup="5 km radius"
+    ).add_to(m)
 
-# --- PREDICTION BLOCK ---
-if st.button("Predict Flood Risk"):
-    with st.spinner("Predicting flood risk..."):
-        result = get_flood_prediction(month, rainfall_day, rainfall_3d)
+    st_folium(m, width=700, height=500)
 
-        result_dict = dict(result)
-        st.write("📦 Raw Prediction Response (dict):", result_dict)
+with predict_col:
+    st.markdown("### 🔥 Flood Prediction")
+    if st.button("Predict Flood Risk"):
+        with st.spinner("Predicting flood risk..."):
+            result = get_flood_prediction(month, rainfall_day, rainfall_3d)
 
-        classes_raw = result_dict.get("classes", "[]")
-        scores_raw = result_dict.get("scores", "[]")
+            result_dict = dict(result)
+            st.write("📦 Raw Prediction Response (dict):", result_dict)
 
-        if isinstance(classes_raw, str):
-            try:
-                classes = json.loads(classes_raw.replace("'", '"'))
-            except json.JSONDecodeError:
-                st.error("❌ Failed to parse 'classes'. Check model response.")
-                st.write("🔎 Raw 'classes':", classes_raw)
-                classes = []
-        else:
-            classes = classes_raw
+            classes_raw = result_dict.get("classes", "[]")
+            scores_raw = result_dict.get("scores", "[]")
 
-        # Ensure scores is a list
-        if isinstance(scores_raw, str):
-            try:
-                scores = json.loads(scores_raw.replace("'", '"'))
-            except json.JSONDecodeError:
-                st.error("❌ Failed to parse 'scores'. Check model response.")
-                st.write("🔎 Raw 'scores':", scores_raw)
-                scores = []
-        else:
-            scores = scores_raw
-
-        # If we got valid classes and scores
-        if classes and scores:
-            if '1' in classes:
-                flood_index = classes.index('1')
-                flood_prob = float(scores[flood_index])
-                no_flood_prob = 1 - flood_prob
-
-                flood_percent = round(flood_prob * 100, 2)
-                no_flood_percent = round(no_flood_prob * 100, 2)
-
-                st.write(f"🌊 **Flood Probability:** {flood_percent}%")
-                st.write(f"☀️ **No Flood Probability:** {no_flood_percent}%")
-
-                predicted_class = "Flood" if flood_prob >= no_flood_prob else "No Flood"
-
-                if predicted_class == "Flood":
-                    st.error(f"🚨 **Predicted: {predicted_class}**")
-                else:
-                    st.success(f"✅ **Predicted: {predicted_class}**")
+            if isinstance(classes_raw, str):
+                try:
+                    classes = json.loads(classes_raw.replace("'", '"'))
+                except json.JSONDecodeError:
+                    st.error("❌ Failed to parse 'classes'. Check model response.")
+                    st.write("🔎 Raw 'classes':", classes_raw)
+                    classes = []
             else:
-                st.error("❌ Class '1' (Flood) not found in model response.")
-                st.write("🔎 Classes:", classes)
-        else:
-            st.error("❌ Prediction response missing scores or classes.")
+                classes = classes_raw
 
+            # Ensure scores is a list
+            if isinstance(scores_raw, str):
+                try:
+                    scores = json.loads(scores_raw.replace("'", '"'))
+                except json.JSONDecodeError:
+                    st.error("❌ Failed to parse 'scores'. Check model response.")
+                    st.write("🔎 Raw 'scores':", scores_raw)
+                    scores = []
+            else:
+                scores = scores_raw
+
+            # Display prediction result
+            if classes and scores:
+                if '1' in classes:
+                    flood_index = classes.index('1')
+                    flood_prob = float(scores[flood_index])
+                    no_flood_prob = 1 - flood_prob
+
+                    flood_percent = round(flood_prob * 100, 2)
+                    no_flood_percent = round(no_flood_prob * 100, 2)
+
+                    st.metric("🌊 Flood Probability", f"{flood_percent}%")
+                    st.metric("☀️ No Flood Probability", f"{no_flood_percent}%")
+
+                    predicted_class = "Flood" if flood_prob >= no_flood_prob else "No Flood"
+
+                    if predicted_class == "Flood":
+                        st.error(f"🚨 **Predicted: {predicted_class}**")
+                    else:
+                        st.success(f"✅ **Predicted: {predicted_class}**")
+                else:
+                    st.error("❌ Class '1' (Flood) not found in model response.")
+                    st.write("🔎 Classes:", classes)
+            else:
+                st.error("❌ Prediction response missing scores or classes.")
