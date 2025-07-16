@@ -234,6 +234,59 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
         st.warning("⚠️ Missing data in Open-Meteo response.")
         return None
 
+# === AUTO-DETECT MODEL SCHEMA & CALL PREDICTION ===
+def get_flood_prediction(month, rainfall_mm, rainfall_3d):
+    client_options = {"api_endpoint": "us-east1-aiplatform.googleapis.com"}
+    
+    # Initialize Vertex AI clients
+    endpoint_client = EndpointServiceClient(
+    credentials=credentials,
+    client_options=client_options
+)
+    model_client = ModelServiceClient(
+    credentials=credentials,
+    client_options=client_options
+)
+    prediction_client = PredictionServiceClient(
+    credentials=credentials,
+    client_options=client_options
+)
+
+    # Get deployed model info
+    project = "pivotal-crawler-459812-m5"
+    endpoint_id = "8314449754637467648"
+    location = "us-east1"
+    endpoint_name = f"projects/{project}/locations/{location}/endpoints/{endpoint_id}"
+
+    endpoint = endpoint_client.get_endpoint(name=endpoint_name)
+    deployed_model = endpoint.deployed_models[0]  
+
+    # Get model details (schema)
+    model = model_client.get_model(name=deployed_model.model)
+    
+    # === PREPARE PREDICTION PAYLOAD ===
+    # You may need to adjust field names here based on schema
+    instance_dict = {
+        "month": str(month),
+        "rainfall_mm": str(rainfall_mm),
+        "rainfall_3d": str(rainfall_3d)
+    }
+    instances = [instance_dict]
+
+    # Call prediction
+    response = prediction_client.predict(
+        endpoint=endpoint_name,
+        instances=instances
+    )
+
+    predictions = response.predictions
+    if predictions:
+        return predictions[0]
+    else:
+        st.error("❌ No predictions returned.")
+        return None
+
+
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
 st.title("🌧️ Flood Prediction Dashboard")
