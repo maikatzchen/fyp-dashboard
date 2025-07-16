@@ -286,6 +286,36 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
         st.error("❌ No predictions returned.")
         return None
 
+import plotly.graph_objects as go
+
+def show_probability_pie(flood_percent, no_flood_percent):
+    fig = go.Figure(data=[go.Pie(
+        labels=['Flood', 'No Flood'],
+        values=[flood_percent, no_flood_percent],
+        hole=0.5,  # Donut chart
+        marker=dict(colors=['red', 'green']),
+        textinfo='none',  # Hide default labels
+        hoverinfo='label+percent'
+    )])
+
+    # Add percentage text in the middle
+    fig.add_annotation(dict(
+        text=f"{flood_percent}%",
+        x=0.5, y=0.5,
+        font_size=24,
+        showarrow=False
+    ))
+
+    fig.update_layout(
+        showlegend=True,
+        margin=dict(t=10, b=10, l=10, r=10)
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+# Show visual chart
+show_probability_pie(flood_percent, no_flood_percent)
+
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
