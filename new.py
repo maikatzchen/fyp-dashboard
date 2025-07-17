@@ -340,7 +340,12 @@ components.html("""
 
   Notification.requestPermission().then((permission) => {
     if (permission === 'granted') {
-      messaging.getToken({ vapidKey: "BHt41K-E8ypCdYO1KXtEjA0IjZca4fMcqk2olg-q1QQW_heJS6VsmJXPTXYMKsG_wWlHA01fmfVHJcDDX_3JqNI" })
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
+      .then((registration) => {
+        messaging.getToken({
+          vapidKey: "BHt41K-E8ypCdYO1KXtEjA0IjZca4fMcqk2olg-q1QQW_heJS6VsmJXPTXYMKsG_wWlHA01fmfVHJcDDX_3JqNI",
+          serviceWorkerRegistration: registration
+        })
       .then((currentToken) => {
         if (currentToken) {
           console.log('Device Token:', currentToken);
