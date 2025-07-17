@@ -332,10 +332,9 @@ def send_push_notification(token, title, body):
     except Exception as e:
         st.error(f"❌ Push notification failed: {e}")
 
-if "fcm_loaded" not in st.session_state:
-    st.session_state.fcm_loaded = True
-    with st.empty():
-        components.iframe("https://pivotal-crawler-459812-m5.web.app/fcm.html", height=0)
+if "fcm_initialized" not in st.session_state:
+    st.session_state.fcm_initialized = True
+    components.iframe("https://pivotal-crawler-459812-m5.web.app/fcm.html", height=0)
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
