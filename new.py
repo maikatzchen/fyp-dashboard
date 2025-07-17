@@ -374,8 +374,10 @@ fcm_js = """
       console.error('Error retrieving token.', err);
     }
   }
-
-  getTokenAndSend();
+if (!window.tokenAlreadySent) {
+    getTokenAndSend();
+    window.tokenAlreadySent = true;
+  }
 </script>
 """
 
