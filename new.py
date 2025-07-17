@@ -349,7 +349,7 @@ fcm_js = """
   const messaging = firebase.messaging();
   
   // Register external service worker
-  navigator.serviceWorker.register('/firebase-messaging-sw.js')
+  navigator.serviceWorker.register('https://pivotal-crawler-459812-m5.web.app/firebase-messaging-sw.js')
     .then((registration) => {
       messaging.useServiceWorker(registration);
       console.log('✅ Service worker registered.');
