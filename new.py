@@ -284,8 +284,6 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
 
 # === FIREBASE BACKEND SETUP ===
 @st.cache_resource
-# === FIREBASE BACKEND SETUP ===
-@st.cache_resource
 def initialize_firebase():
     firebase_key = None
 
@@ -307,7 +305,7 @@ def initialize_firebase():
             st.warning(f"⚠️ st.secrets unavailable: {e}")
             try:
                 # Fallback: environment variable
-                firebase_key = json.loads(os.environ["FIREBASE_SERVICE_ACCOUNT"])
+                firebase_key = json.loads(os.environ["firebase-service-account"])
                 st.info("✅ Loaded Firebase key from environment variable")
             except Exception as e:
                 st.error("❌ No Firebase credentials found! Please set them in st.secrets or as env var.")
