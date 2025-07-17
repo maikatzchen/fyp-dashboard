@@ -8,6 +8,7 @@ from datetime import date
 import ee
 import ast
 import folium
+import streamlit.components.v1 as components
 from streamlit_folium import st_folium
 from google.oauth2 import service_account
 from google.cloud import aiplatform_v1
@@ -18,6 +19,8 @@ from google.cloud.aiplatform_v1.services.endpoint_service import EndpointService
 from google.cloud.aiplatform_v1.services.model_service import ModelServiceClient
 from google.cloud.aiplatform_v1.services.prediction_service import PredictionServiceClient
 from google.cloud import secretmanager
+import firebase_admin
+from firebase_admin import credentials, messaging
 
 # === GCP AUTHENTICATION ===
 def access_secret(secret_id):
@@ -279,6 +282,105 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
         st.error("❌ No predictions returned.")
         return None
 
+# === FIREBASE BACKEND SETUP ===
+@st.cache_resource
+def initialize_firebase():
+    # Get secret from Secret Manager
+    client = secretmanager.SecretManagerServiceClient()
+    secret_name = "projects/fyp-dashboard-47421/secrets/firebase-service-account/versions/latest"
+    response = client.access_secret_version(request={"name": secret_name})
+    firebase_key = json.loads(response.payload.data.decode("UTF-8"))
+
+    cred = credentials.Certificate(firebase_key)
+    return firebase_admin.initialize_app(cred)
+
+initialize_firebase()
+
+
+# === SAVE DEVICE TOKEN ===
+def save_token(token):
+    # For demo: save token in session_state (replace with Firestore or DB later)
+    if "tokens" not in st.session_state:
+        st.session_state.tokens = []
+    if token not in st.session_state.tokens:
+        st.session_state.tokens.append(token)
+    st.success(f"Device token saved: {token}")
+
+
+# === CHECK QUERY PARAM FOR TOKEN ===
+query_params = st.experimental_get_query_params()
+if "token" in query_params:
+    token = query_params["token"][0]
+    save_token(token)
+
+
+# === SEND PUSH NOTIFICATION ===
+def send_push_notification(token, title, body):
+    message = messaging.Message(
+        notification=messaging.Notification(
+            title=title,
+            body=body
+        ),
+        token=token
+    )
+    response = messaging.send(message)
+    st.info(f"Notification sent! Message ID: {response}")
+
+
+# === STREAMLIT UI ===
+st.title("🔥 Firebase Push Notifications (Demo)")
+
+if st.button("Send Test Notification"):
+    if "tokens" in st.session_state and st.session_state.tokens:
+        for t in st.session_state.tokens:
+            send_push_notification(t, "FYP Alert 🚨", "This is a test push notification.")
+    else:
+        st.warning("No device tokens saved yet. Enable notifications in browser first.")
+
+components.html("""
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBPTeebwjHJyMmR4X-iusxszs7LP-XB91o",
+    authDomain: "fyp-dashboard-47421.firebaseapp.com",
+    projectId: "fyp-dashboard-47421",
+    storageBucket: "fyp-dashboard-47421.appspot.com",
+    messagingSenderId: "439189495419",
+    appId: "1:439189495419:web:270be7fe3a792b0a4a0cde",
+    measurementId: "G-37TTC67ZWT"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const messaging = firebase.messaging();
+
+  // Request permission and get token
+  Notification.requestPermission().then((permission) => {
+    if (permission === 'granted') {
+      messaging.getToken({ vapidKey: "BFa23e6ZT1Kn6rbdh1Ke6iEn8CDHtNVl0wZXEmVSTAry7iL5q0jCyfRxf2g-Vs_uOvNYoNUYRF3pfQItUF_hSrs" })
+      .then((currentToken) => {
+        if (currentToken) {
+          console.log('Device Token:', currentToken);
+          // Send token to Streamlit via query params
+          window.location.href = "?token=" + currentToken;
+        } else {
+          console.log('No registration token available.');
+        }
+      }).catch((err) => {
+        console.error('An error occurred while retrieving token. ', err);
+      });
+    } else {
+      console.log('Notifications permission denied.');
+    }
+  });
+
+  // Listen for messages while dashboard is open
+  messaging.onMessage((payload) => {
+    console.log('Message received in foreground: ', payload);
+    alert(payload.notification.title + ": " + payload.notification.body);
+  });
+</script>
+""", height=0)
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
