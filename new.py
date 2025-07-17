@@ -212,7 +212,7 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
     response = requests.get(url, params=params)
 
     if response.status_code != 200:
-        st.error(f"[Open-Meteo API error] {response.status_code}: {response.text}")
+        print(f"[Open-Meteo API error] {response.status_code}: {response.text}")
         return None
 
     try:
