@@ -321,56 +321,7 @@ def send_push_notification(token, title, body):
     response = messaging.send(message)
     st.info(f"Notification sent! Message ID: {response}")
 
-components.html("""
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
-
-<script>
-  var firebaseConfig = {
-    apiKey: "AIzaSyDV_7UdNmGlyGA2gXShjzUoVDcNVUcD0Zo",
-    authDomain: "pivotal-crawler-459812-m5.firebaseapp.com",
-    projectId: "pivotal-crawler-459812-m5",
-    storageBucket: "pivotal-crawler-459812-m5.appspot.com",
-    messagingSenderId: "85676216639",
-    appId: "1:85676216639:web:574d48b8f858c867b1038a",
-    measurementId: "G-YBDLNQ6C81"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const messaging = firebase.messaging();
-
-  Notification.requestPermission().then((permission) => {
-    if (permission === 'granted') {
-      navigator.serviceWorker.register('https://pivotal-crawler-459812-m5.web.app/firebase-messaging-sw.js')
-      .then((registration) => {
-        messaging.getToken({
-          vapidKey: "BHt41K-E8ypCdYO1KXtEjA0IjZca4fMcqk2olg-q1QQW_heJS6VsmJXPTXYMKsG_wWlHA01fmfVHJcDDX_3JqNI",
-          serviceWorkerRegistration: registration
-        })
-      .then((currentToken) => {
-        if (currentToken) {
-          console.log('Device Token:', currentToken);
-          fetch("/?token=" + currentToken, {method: "GET"})
-          .then(() => console.log("Token sent to Streamlit."))
-          .catch(err => console.error("Failed to send token:", err));
-          alert("✅ Notifications enabled!");
-        } else {
-          console.log('No registration token available.');
-        }
-      }).catch((err) => {
-        console.error('An error occurred while retrieving token. ', err);
-      });
-    } else {
-      console.log('Notifications permission denied.');
-    }
-  });
-
-  messaging.onMessage((payload) => {
-    console.log('Message received: ', payload);
-    alert(payload.notification.title + ": " + payload.notification.body);
-  });
-</script>
-""", height=0)
+components.iframe("https://pivotal-crawler-459812-m5.web.app/fcm.html", height=0)
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
