@@ -297,18 +297,6 @@ initialize_firebase()
 
 db = firestore.client()
 
-# Get Streamlit’s underlying Flask app
-app = Server.get_current()._server.app
-
-# Serve the service worker
-@app.route('/firebase-messaging-sw.js')
-def serve_service_worker():
-    return send_from_directory(
-        os.path.dirname(__file__),
-        'firebase-messaging-sw.js',
-        mimetype='application/javascript'
-    )
-
 # === SAVE DEVICE TOKEN ===
 def save_token_to_firestore(token):
     if "saved_tokens" not in st.session_state:
@@ -361,7 +349,7 @@ fcm_js = """
   const messaging = firebase.messaging();
   
   // Register external service worker
-  navigator.serviceWorker.register('/firebase-messaging-sw.js')
+  navigator.serviceWorker.register('https://pivotal-crawler-459812-m5.web.app/firebase-messaging-sw.js')
     .then((registration) => {
       messaging.useServiceWorker(registration);
       console.log('✅ Service worker registered.');
