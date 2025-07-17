@@ -307,7 +307,7 @@ def save_token_to_firestore(token):
 # === CHECK QUERY PARAM FOR TOKEN ===
 def handle_token_once():
     if "token_handled" not in st.session_state:
-        query_params = st.query_params()
+        query_params = st.query_params
         if "token" in query_params:
             token = query_params["token"][0]
             if "saved_token" not in st.session_state or st.session_state.saved_token != token:
