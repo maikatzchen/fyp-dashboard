@@ -321,14 +321,15 @@ def send_push_notification(token, title, body):
     st.info(f"Notification sent! Message ID: {response}")
 
 components.html("""
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+
 <script>
-  const firebaseConfig = {
+  var firebaseConfig = {
     apiKey: "AIzaSyDV_7UdNmGlyGA2gXShjzUoVDcNVUcD0Zo",
     authDomain: "pivotal-crawler-459812-m5.firebaseapp.com",
     projectId: "pivotal-crawler-459812-m5",
-    storageBucket: "pivotal-crawler-459812-m5.firebasestorage.app",
+    storageBucket: "pivotal-crawler-459812-m5.appspot.com",
     messagingSenderId: "85676216639",
     appId: "1:85676216639:web:574d48b8f858c867b1038a",
     measurementId: "G-YBDLNQ6C81"
@@ -337,14 +338,12 @@ components.html("""
   firebase.initializeApp(firebaseConfig);
   const messaging = firebase.messaging();
 
-  // Request permission and get token
   Notification.requestPermission().then((permission) => {
     if (permission === 'granted') {
       messaging.getToken({ vapidKey: "BHt41K-E8ypCdYO1KXtEjA0IjZca4fMcqk2olg-q1QQW_heJS6VsmJXPTXYMKsG_wWlHA01fmfVHJcDDX_3JqNI" })
       .then((currentToken) => {
         if (currentToken) {
           console.log('Device Token:', currentToken);
-          // Send token to Streamlit via query params
           fetch("/?token=" + currentToken, {method: "GET"})
           .then(() => console.log("Token sent to Streamlit."))
           .catch(err => console.error("Failed to send token:", err));
@@ -360,9 +359,8 @@ components.html("""
     }
   });
 
-  // Listen for messages while dashboard is open
   messaging.onMessage((payload) => {
-    console.log('Message received in foreground: ', payload);
+    console.log('Message received: ', payload);
     alert(payload.notification.title + ": " + payload.notification.body);
   });
 </script>
