@@ -14,6 +14,7 @@ google-auth-httplib2
 google-api-python-client
 google-cloud-secret-manager
 google-cloud-aiplatform==1.43.0
+firebase-admin==6.5.0
 setuptools>=68.0
 
 
