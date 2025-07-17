@@ -310,11 +310,11 @@ def handle_token_once():
         query_params = st.query_params
         if "token" in query_params:
             token = query_params["token"][0]
-            if "saved_token" not in st.session_state or st.session_state.saved_token != token:
+            if st.session_state.get("saved_token") != token:
                 save_token_to_firestore(token)
                 st.session_state.saved_token = token
         st.session_state.token_handled = True
-
+        
 handle_token_once()
 
 # === SEND PUSH NOTIFICATION ===
@@ -332,9 +332,9 @@ def send_push_notification(token, title, body):
     except Exception as e:
         st.error(f"❌ Push notification failed: {e}")
 
-if "fcm_initialized" not in st.session_state:
-    st.session_state.fcm_initialized = True
-    components.iframe("https://pivotal-crawler-459812-m5.web.app/fcm.html", height=0)
+if not st.session_state.get("fcm_rendered", False):
+    components.iframe("https://pivotal-crawler-459812-m5.web.app/fcm.html", height=50)
+    st.session_state.fcm_rendered = True
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
