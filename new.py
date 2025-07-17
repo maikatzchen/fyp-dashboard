@@ -380,7 +380,7 @@ fcm_js = """
 """
 
 # Inject into Streamlit
-token = components.html(fcm_js, height=0, scrolling=False, key="fcm_token")
+token = components.html(fcm_js, height=0, scrolling=False)
 
 # Save token to Firestore if available
 if isinstance(token, str) and token != "null":
