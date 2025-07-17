@@ -343,38 +343,36 @@ fcm_js = """
     appId: "1:85676216639:web:574d48b8f858c867b1038a",
     measurementId: "G-YBDLNQ6C81"
   };
-
-  // Initialize Firebase
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-  }
-
+  firebase.initializeApp(firebaseConfig);
+  
   const messaging = firebase.messaging();
-
-  function requestNotificationPermission() {
-    Notification.requestPermission().then(function(permission) {
-      if (permission === "granted") {
-        console.log("Notification permission granted.");
-        messaging.getToken({vapidKey: "BHt41K-E8ypCdYO1KXtEjA0IjZca4fMcqk2olg-q1QQW_heJS6VsmJXPTXYMKsG_wWlHA01fmfVHJcDDX_3JqNI"})
-        .then((currentToken) => {
-          if (currentToken) {
-            console.log("Device token:", currentToken);
-            Streamlit.setComponentValue(currentToken);
-          } else {
-            console.log("No registration token available.");
-          }
-        }).catch((err) => {
-          console.error("An error occurred while retrieving token. ", err);
-        });
+  async function getTokenAndSend() {
+    try {
+      await Notification.requestPermission();
+      const token = await messaging.getToken({ vapidKey: 'BHt41K-E8ypCdYO1KXtEjA0IjZca4fMcqk2olg-q1QQW_heJS6VsmJXPTXYMKsG_wWlHA01fmfVHJcDDX_3JqNI' });
+      if (token) {
+        Streamlit.setComponentValue(token);
       } else {
-        console.log("Notification permission denied.");
+        console.log('No token available.');
       }
-    });
+    } catch (err) {
+      console.error('Token error:', err);
+    }
   }
-
-  requestNotificationPermission();
+  getTokenAndSend();
 </script>
 """
+
+if "firebase_initialized" not in st.session_state:
+    token = components.html(fcm_js, height=0, scrolling=False)
+    st.session_state.firebase_initialized = True
+else:
+    token = st.session_state.get("saved_token", None)
+
+# Save token if new
+if isinstance(token, str) and token != "null" and token not in st.session_state.get("saved_tokens", set()):
+    save_token_to_firestore(token)
+    st.session_state.saved_token = token
 
 # === LOAD FIREBASE TOKEN ONCE ===
 if "firebase_token_loaded" not in st.session_state:
