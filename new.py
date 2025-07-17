@@ -285,39 +285,11 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
 # === FIREBASE BACKEND SETUP ===
 @st.cache_resource
 def initialize_firebase():
-    firebase_key = None
-
-    try:
-        # Try Secret Manager first
-        from google.cloud import secretmanager
-        client = secretmanager.SecretManagerServiceClient()
-        secret_name = "projects/fyp-dashboard-47421/secrets/firebase-service-account/versions/latest"
-        response = client.access_secret_version(request={"name": secret_name})
-        firebase_key = json.loads(response.payload.data.decode("UTF-8"))
-        st.info("✅ Loaded Firebase key from Secret Manager")
-    except Exception as e:
-        st.warning(f"⚠️ Secret Manager unavailable: {e}")
-        try:
-            # Fallback: Streamlit secrets
-            firebase_key = json.loads(st.secrets["firebase-service-account"])
-            st.info("✅ Loaded Firebase key from st.secrets")
-        except Exception as e:
-            st.warning(f"⚠️ st.secrets unavailable: {e}")
-            try:
-                # Fallback: environment variable
-                firebase_key = json.loads(os.environ["firebase-service-account"])
-                st.info("✅ Loaded Firebase key from environment variable")
-            except Exception as e:
-                st.error("❌ No Firebase credentials found! Please set them in st.secrets or as env var.")
-                raise e
-
-    from firebase_admin import credentials, initialize_app
+    firebase_key = json.loads(access_secret("firebase-service-account"))
     cred = credentials.Certificate(firebase_key)
-    return initialize_app(cred)
+    return firebase_admin.initialize_app(cred)
 
 initialize_firebase()
-
-
 
 # === SAVE DEVICE TOKEN ===
 def save_token(token):
@@ -364,13 +336,13 @@ components.html("""
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging.js"></script>
 <script>
   const firebaseConfig = {
-    apiKey: "AIzaSyBPTeebwjHJyMmR4X-iusxszs7LP-XB91o",
-    authDomain: "fyp-dashboard-47421.firebaseapp.com",
-    projectId: "fyp-dashboard-47421",
-    storageBucket: "fyp-dashboard-47421.appspot.com",
-    messagingSenderId: "439189495419",
-    appId: "1:439189495419:web:270be7fe3a792b0a4a0cde",
-    measurementId: "G-37TTC67ZWT"
+    apiKey: "AIzaSyDV_7UdNmGlyGA2gXShjzUoVDcNVUcD0Zo",
+    authDomain: "pivotal-crawler-459812-m5.firebaseapp.com",
+    projectId: "pivotal-crawler-459812-m5",
+    storageBucket: "pivotal-crawler-459812-m5.firebasestorage.app",
+    messagingSenderId: "85676216639",
+    appId: "1:85676216639:web:574d48b8f858c867b1038a",
+    measurementId: "G-YBDLNQ6C81"
   };
 
   firebase.initializeApp(firebaseConfig);
@@ -379,7 +351,7 @@ components.html("""
   // Request permission and get token
   Notification.requestPermission().then((permission) => {
     if (permission === 'granted') {
-      messaging.getToken({ vapidKey: "BLwo0kcoBKPiBDrT9hvTz1jyoYhHC5cMXKyXCBMTUrJM5YAb3_C5PeeO5YH3Uz6LyZy8Rc0oFVmfV5OcOZiIkU0" })
+      messaging.getToken({ vapidKey: "BHt41K-E8ypCdYO1KXtEjA0IjZca4fMcqk2olg-q1QQW_heJS6VsmJXPTXYMKsG_wWlHA01fmfVHJcDDX_3JqNI" })
       .then((currentToken) => {
         if (currentToken) {
           console.log('Device Token:', currentToken);
