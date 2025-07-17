@@ -302,7 +302,7 @@ def save_token(token):
 
 
 # === CHECK QUERY PARAM FOR TOKEN ===
-query_params = st.experimental_get_query_params()
+query_params = st.query_params
 if "token" in query_params:
     token = query_params["token"][0]
     save_token(token)
