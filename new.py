@@ -356,7 +356,10 @@ components.html("""
         if (currentToken) {
           console.log('Device Token:', currentToken);
           // Send token to Streamlit via query params
-          window.location.href = "?token=" + currentToken;
+          fetch("/?token=" + currentToken, {method: "GET"})
+          .then(() => console.log("Token sent to Streamlit."))
+          .catch(err => console.error("Failed to send token:", err));
+          alert("✅ Notifications enabled!");
         } else {
           console.log('No registration token available.');
         }
@@ -499,8 +502,21 @@ with predict_col:
 
                     if predicted_class == "Flood":
                         st.error(f"🚨 **Predicted: {predicted_class}**")
-                    else:
-                        st.success(f"✅ **Predicted: {predicted_class}**")
+    
+                        # Send push notification if risk >= 60%
+                        if flood_percent >= 60:
+                            if "tokens" in st.session_state and st.session_state.tokens:
+                                for t in st.session_state.tokens:
+                                    send_push_notification(
+                                        t,
+                                        "🌊 Flood Risk Alert",
+                                        f"⚠️ High flood risk predicted ({flood_percent}%) for {selected_district} on {selected_date}!"
+                                    )
+                            else:
+                                st.warning("⚠️ No device tokens saved. User needs to enable notifications.")
+                else:
+                    st.success(f"✅ **Predicted: {predicted_class}**")
+
                 else:
                     st.error("❌ Class '1' (Flood) not found in model response.")
                     st.write("🔎 Classes:", classes)
