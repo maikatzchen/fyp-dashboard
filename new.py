@@ -328,7 +328,49 @@ def send_push_notification(token, title, body):
     except Exception as e:
         st.error(f"❌ Push notification failed: {e}")
 
-navigator.serviceWorker.register('https://your-firebase-app.web.app/firebase-messaging-sw.js');
+fcm_js = """
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDV_7UdNmGlyGA2gXShjzUoVDcNVUcD0Zo",
+    authDomain: "pivotal-crawler-459812-m5.firebaseapp.com",
+    projectId: "pivotal-crawler-459812-m5",
+    storageBucket: "pivotal-crawler-459812-m5.appspot.com",
+    messagingSenderId: "85676216639",
+    appId: "1:85676216639:web:574d48b8f858c867b1038a",
+    measurementId: "G-YBDLNQ6C81"
+  };
+  firebase.initializeApp(firebaseConfig);
+  
+  const messaging = firebase.messaging();
+  
+  // Register external service worker
+  navigator.serviceWorker.register('https://https://pivotal-crawler-459812-m5.web.app//firebase-messaging-sw.js')
+    .then((registration) => {
+      messaging.useServiceWorker(registration);
+      console.log('✅ Service worker registered.');
+    }).catch((err) => {
+      console.error('❌ Service worker registration failed:', err);
+    });
+
+  async function getTokenAndSend() {
+    try {
+      await Notification.requestPermission();
+      const token = await messaging.getToken({ vapidKey: 'BHt41K-E8ypCdYO1KXtEjA0IjZca4fMcqk2olg-q1QQW_heJS6VsmJXPTXYMKsG_wWlHA01fmfVHJcDDX_3JqNI' });
+      if (token) {
+        Streamlit.setComponentValue(token);
+      } else {
+        console.log('No token available.');
+      }
+    } catch (err) {
+      console.error('Token error:', err);
+    }
+  }
+  getTokenAndSend();
+</script>
+"""
+
 
 if "firebase_initialized" not in st.session_state:
     token = components.html(fcm_js, height=0, scrolling=False)
