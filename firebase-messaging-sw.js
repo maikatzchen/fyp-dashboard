@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getMessaging } from 'firebase/messaging/sw';
 
-firebase.initializeApp = {
+const firebaseConfig = { = {
   apiKey: "AIzaSyDV_7UdNmGlyGA2gXShjzUoVDcNVUcD0Zo",
   authDomain: "pivotal-crawler-459812-m5.firebaseapp.com",
   projectId: "pivotal-crawler-459812-m5",
