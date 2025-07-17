@@ -379,7 +379,7 @@ components.html("""
   // Request permission and get token
   Notification.requestPermission().then((permission) => {
     if (permission === 'granted') {
-      messaging.getToken({ vapidKey: "BFa23e6ZT1Kn6rbdh1Ke6iEn8CDHtNVl0wZXEmVSTAry7iL5q0jCyfRxf2g-Vs_uOvNYoNUYRF3pfQItUF_hSrs" })
+      messaging.getToken({ vapidKey: "BLwo0kcoBKPiBDrT9hvTz1jyoYhHC5cMXKyXCBMTUrJM5YAb3_C5PeeO5YH3Uz6LyZy8Rc0oFVmfV5OcOZiIkU0" })
       .then((currentToken) => {
         if (currentToken) {
           console.log('Device Token:', currentToken);
