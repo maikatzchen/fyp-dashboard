@@ -380,10 +380,10 @@ fcm_js = """
 """
 
 # Inject into Streamlit
-token = components.html(fcm_js, height=0)
+token = components.html(fcm_js, height=0, scrolling=False, key="fcm_token")
 
 # Save token to Firestore if available
-if token and token != "null":
+if isinstance(token, str) and token != "null":
     if "saved_token" not in st.session_state or st.session_state.saved_token != token:
         save_token_to_firestore(token)
         st.session_state.saved_token = token
