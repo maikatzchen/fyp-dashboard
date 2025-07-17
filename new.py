@@ -487,37 +487,37 @@ with predict_col:
 # Display prediction result
 if classes and scores:
     if '1' in classes:
-    flood_index = classes.index('1')
-    flood_prob = float(scores[flood_index])
-    no_flood_prob = 1 - flood_prob
+        flood_index = classes.index('1')
+        flood_prob = float(scores[flood_index])
+        no_flood_prob = 1 - flood_prob
 
-    flood_percent = round(flood_prob * 100, 2)
-    no_flood_percent = round(no_flood_prob * 100, 2)
+        flood_percent = round(flood_prob * 100, 2)
+        no_flood_percent = round(no_flood_prob * 100, 2)
 
-    st.metric("🌊 Flood Probability", f"{flood_percent}%")
-    st.metric("☀️ No Flood Probability", f"{no_flood_percent}%")
+        st.metric("🌊 Flood Probability", f"{flood_percent}%")
+        st.metric("☀️ No Flood Probability", f"{no_flood_percent}%")
 
-    predicted_class = "Flood" if flood_prob >= no_flood_prob else "No Flood"
+        predicted_class = "Flood" if flood_prob >= no_flood_prob else "No Flood"
 
-    if predicted_class == "Flood":
-        st.error(f"🚨 **Predicted: {predicted_class}**")
+        if predicted_class == "Flood":
+            st.error(f"🚨 **Predicted: {predicted_class}**")
 
-        # Send push notification if risk >= 60%
-        if flood_percent >= 60:
-            if "tokens" in st.session_state and st.session_state.tokens:
-                for t in st.session_state.tokens:
-                    send_push_notification(
-                        t,
-                        "🌊 Flood Risk Alert",
-                        f"⚠️ High flood risk predicted ({flood_percent}%) for {selected_district} on {selected_date}!"
-                    )
-            else:
-                st.warning("⚠️ No device tokens saved. User needs to enable notifications.")
+            # Send push notification if risk >= 60%
+            if flood_percent >= 60:
+                if "tokens" in st.session_state and st.session_state.tokens:
+                    for t in st.session_state.tokens:
+                        send_push_notification(
+                            t,
+                            "🌊 Flood Risk Alert",
+                            f"⚠️ High flood risk predicted ({flood_percent}%) for {selected_district} on {selected_date}!"
+                        )
+                else:
+                    st.warning("⚠️ No device tokens saved. User needs to enable notifications.")
+        else:
+            st.success(f"✅ **Predicted: {predicted_class}**")
     else:
-        st.success(f"✅ **Predicted: {predicted_class}**")
-else:
-    st.error("❌ Class '1' (Flood) not found in model response.")
-    st.write("🔎 Classes:", classes)
+        st.error("❌ Class '1' (Flood) not found in model response.")
+        st.write("🔎 Classes:", classes)
 
 
 import os
