@@ -293,12 +293,13 @@ initialize_firebase()
 
 # === SAVE DEVICE TOKEN ===
 def save_token(token):
-    # For demo: save token in session_state (replace with Firestore or DB later)
     if "tokens" not in st.session_state:
         st.session_state.tokens = []
     if token not in st.session_state.tokens:
         st.session_state.tokens.append(token)
+        print(f"✅ Saved token: {token}")  # Debug log
     st.success(f"Device token saved: {token}")
+
 
 
 # === CHECK QUERY PARAM FOR TOKEN ===
