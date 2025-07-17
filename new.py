@@ -292,7 +292,6 @@ def initialize_firebase():
 
 initialize_firebase()
 
-from firebase_admin import firestore
 db = firestore.client()
 
 # === SAVE DEVICE TOKEN ===
