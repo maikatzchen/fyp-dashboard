@@ -20,6 +20,7 @@ from google.cloud.aiplatform_v1.services.model_service import ModelServiceClient
 from google.cloud.aiplatform_v1.services.prediction_service import PredictionServiceClient
 from google.cloud import secretmanager
 import firebase_admin
+from firebase_admin import firestore
 from firebase_admin import messaging
 from firebase_admin import credentials as firebase_credentials
 
@@ -292,7 +293,7 @@ def initialize_firebase():
 initialize_firebase()
 
 from firebase_admin import firestore
-db = firestore.client(database='dashboardfirestore')
+db = firestore.client()
 
 # === SAVE DEVICE TOKEN ===
 def save_token_to_firestore(token):
