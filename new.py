@@ -291,37 +291,40 @@ def initialize_firebase():
 
 initialize_firebase()
 
-# === SAVE DEVICE TOKEN ===
-def save_token(token):
-    if "tokens" not in st.session_state:
-        st.session_state.tokens = []
-    if token not in st.session_state.tokens:
-        st.session_state.tokens.append(token)
-        print(f"✅ Saved token: {token}")  # Debug log
-    st.success(f"Device token saved: {token}")
+from firebase_admin import firestore
+db = firestore.client()
 
+# === SAVE DEVICE TOKEN ===
+def save_token_to_firestore(token):
+    doc_ref = db.collection("device_tokens").document(token)
+    doc_ref.set({"timestamp": datetime.datetime.utcnow()})
+    st.success(f"Device token saved to Firestore: {token}")
 
 
 # === CHECK QUERY PARAM FOR TOKEN ===
-query_params = st.query_params
 if "token" in query_params:
     token = query_params["token"][0]
-    save_token(token)
+    save_token_to_firestore(token)
 
 
 # === SEND PUSH NOTIFICATION ===
 def send_push_notification(token, title, body):
-    message = messaging.Message(
-        notification=messaging.Notification(
-            title=title,
-            body=body
-        ),
-        token=token
-    )
-    response = messaging.send(message)
-    st.info(f"Notification sent! Message ID: {response}")
-
-components.iframe("https://pivotal-crawler-459812-m5.web.app/fcm.html", height=0)
+    try:
+        message = messaging.Message(
+            notification=messaging.Notification(
+                title=title,
+                body=body
+            ),
+            token=token
+        )
+        response = messaging.send(message)
+        st.info(f"Notification sent! Message ID: {response}")
+    except Exception as e:
+        st.error(f"❌ Push notification failed: {e}")
+    
+if "fcm_loaded" not in st.session_state:
+    st.session_state.fcm_loaded = True
+    components.iframe("https://pivotal-crawler-459812-m5.web.app/fcm.html", height=0)
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
@@ -392,8 +395,13 @@ with map_col:
         fill_opacity=0.2,
         popup="5 km radius"
     ).add_to(m)
+    
+if "map" not in st.session_state:
+    st.session_state.map = m
 
-    st_folium(m, width=1000, height=500)
+st_folium(st.session_state.map, width=1000, height=500)
+
+
 
 with predict_col:
     st.markdown("### 🎯 Flood Prediction")
