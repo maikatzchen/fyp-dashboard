@@ -330,14 +330,60 @@ def send_push_notification(token, title, body):
         st.error(f"❌ Push notification failed: {e}")
 
 # === FIREBASE FCM JAVASCRIPT (v8) ===
-import streamlit.components.v1 as components
-
 fcm_js = """
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
 <script>
   const firebaseConfig = {
-    apiKey: "AIzaSyDV
+    apiKey: "AIzaSyDV_7UdNmGlyGA2gXShjzUoVDcNVUcD0Zo",
+    authDomain: "pivotal-crawler-459812-m5.firebaseapp.com",
+    projectId: "pivotal-crawler-459812-m5",
+    storageBucket: "pivotal-crawler-459812-m5.appspot.com",
+    messagingSenderId: "85676216639",
+    appId: "1:85676216639:web:574d48b8f858c867b1038a",
+    measurementId: "G-YBDLNQ6C81"
+  };
+
+  // Initialize Firebase
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+
+  const messaging = firebase.messaging();
+
+  function requestNotificationPermission() {
+    Notification.requestPermission().then(function(permission) {
+      if (permission === "granted") {
+        console.log("Notification permission granted.");
+        messaging.getToken({vapidKey: "BHt41K-E8ypCdYO1KXtEjA0IjZca4fMcqk2olg-q1QQW_heJS6VsmJXPTXYMKsG_wWlHA01fmfVHJcDDX_3JqNI"})
+        .then((currentToken) => {
+          if (currentToken) {
+            console.log("Device token:", currentToken);
+            Streamlit.setComponentValue(currentToken);
+          } else {
+            console.log("No registration token available.");
+          }
+        }).catch((err) => {
+          console.error("An error occurred while retrieving token. ", err);
+        });
+      } else {
+        console.log("Notification permission denied.");
+      }
+    });
+  }
+
+  requestNotificationPermission();
+</script>
+"""
+
+# === LOAD FIREBASE TOKEN ONCE ===
+if "firebase_token_loaded" not in st.session_state:
+    token = components.html(fcm_js, height=0, scrolling=False)
+    st.session_state.firebase_token_loaded = True
+    if isinstance(token, str) and token != "null":
+        if "saved_token" not in st.session_state or st.session_state.saved_token != token:
+            save_token_to_firestore(token)
+            st.session_state.saved_token = token
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
