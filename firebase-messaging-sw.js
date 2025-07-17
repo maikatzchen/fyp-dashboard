@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getMessaging } from 'firebase/messaging/sw';
 
-const firebaseConfig = { = {
+const firebaseConfig = {
   apiKey: "AIzaSyDV_7UdNmGlyGA2gXShjzUoVDcNVUcD0Zo",
   authDomain: "pivotal-crawler-459812-m5.firebaseapp.com",
   projectId: "pivotal-crawler-459812-m5",
@@ -13,3 +13,15 @@ const firebaseConfig = { = {
 
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
+
+// Handle background messages
+onBackgroundMessage(messaging, (payload) => {
+  console.log('[firebase-messaging-sw.js] Received background message:', payload);
+
+  const { title, body, icon } = payload.notification;
+
+  self.registration.showNotification(title, {
+    body: body,
+    icon: icon || '/firebase-logo.png' // fallback icon if none provided
+  });
+});
