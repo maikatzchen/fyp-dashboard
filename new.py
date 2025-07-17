@@ -305,28 +305,16 @@ def save_token_to_firestore(token):
         st.session_state.saved_tokens.add(token)
         st.success(f"Device token saved to Firestore: {token}")
 
-# === CHECK QUERY PARAM FOR TOKEN ===
-def handle_token_once():
-    if "token_handled" not in st.session_state:
-        query_params = st.query_params
-        if "token" in query_params:
-            token = query_params["token"][0]
-            if st.session_state.get("saved_token") != token:
-                save_token_to_firestore(token)
-                st.session_state.saved_token = token
-        st.session_state.token_handled = True
-        
-handle_token_once()
-
-# === SEND PUSH NOTIFICATION ===
+# === GET ALL DEVICE TOKENS ===
 def get_all_device_tokens():
     tokens_ref = db.collection("device_tokens")
     docs = tokens_ref.stream()
     return [doc.id for doc in docs]
-    
+
 if "tokens" not in st.session_state:
     st.session_state.tokens = get_all_device_tokens()
 
+# === SEND PUSH NOTIFICATION ===
 def send_push_notification(token, title, body):
     try:
         message = messaging.Message(
@@ -341,54 +329,15 @@ def send_push_notification(token, title, body):
     except Exception as e:
         st.error(f"❌ Push notification failed: {e}")
 
+# === FIREBASE FCM JAVASCRIPT (v8) ===
 import streamlit.components.v1 as components
 
 fcm_js = """
-<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-messaging.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
 <script>
   const firebaseConfig = {
-    apiKey: "AIzaSyDV_7UdNmGlyGA2gXShjzUoVDcNVUcD0Zo",
-    authDomain: "pivotal-crawler-459812-m5.firebaseapp.com",
-    projectId: "pivotal-crawler-459812-m5",
-    storageBucket: "pivotal-crawler-459812-m5.firebasestorage.app",
-    messagingSenderId: "85676216639",
-    appId: "1:85676216639:web:574d48b8f858c867b1038a",
-    measurementId: "G-YBDLNQ6C81"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-
-  const messaging = firebase.messaging();
-
-  async function getTokenAndSend() {
-    try {
-      await Notification.requestPermission();
-      const token = await messaging.getToken({ vapidKey: 'BHt41K-E8ypCdYO1KXtEjA0IjZca4fMcqk2olg-q1QQW_heJS6VsmJXPTXYMKsG_wWlHA01fmfVHJcDDX_3JqNI' });
-      if (token) {
-        Streamlit.setComponentValue(token);
-      } else {
-        console.log('No registration token available.');
-      }
-    } catch (err) {
-      console.error('Error retrieving token.', err);
-    }
-  }
-if (!window.localStorage.getItem("fcmTokenSaved")) {
-  getTokenAndSend();
-  window.localStorage.setItem("fcmTokenSaved", "true");
-}
-</script>
-"""
-
-# Inject into Streamlit
-token = components.html(fcm_js, height=0, scrolling=False)
-
-# Save token to Firestore if available
-if isinstance(token, str) and token != "null":
-    if "saved_token" not in st.session_state or st.session_state.saved_token != token:
-        save_token_to_firestore(token)
-        st.session_state.saved_token = token
+    apiKey: "AIzaSyDV
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
