@@ -318,6 +318,14 @@ def handle_token_once():
 handle_token_once()
 
 # === SEND PUSH NOTIFICATION ===
+def get_all_device_tokens():
+    tokens_ref = db.collection("device_tokens")
+    docs = tokens_ref.stream()
+    return [doc.id for doc in docs]
+    
+if "tokens" not in st.session_state:
+    st.session_state.tokens = get_all_device_tokens()
+
 def send_push_notification(token, title, body):
     try:
         message = messaging.Message(
@@ -332,9 +340,53 @@ def send_push_notification(token, title, body):
     except Exception as e:
         st.error(f"❌ Push notification failed: {e}")
 
-if not st.session_state.get("fcm_rendered", False):
-    components.iframe("https://pivotal-crawler-459812-m5.web.app/fcm.html", height=50)
-    st.session_state.fcm_rendered = True
+import streamlit.components.v1 as components
+
+fcm_js = """
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-messaging.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDV_7UdNmGlyGA2gXShjzUoVDcNVUcD0Zo",
+    authDomain: "pivotal-crawler-459812-m5.firebaseapp.com",
+    projectId: "pivotal-crawler-459812-m5",
+    storageBucket: "pivotal-crawler-459812-m5.firebasestorage.app",
+    messagingSenderId: "85676216639",
+    appId: "1:85676216639:web:574d48b8f858c867b1038a",
+    measurementId: "G-YBDLNQ6C81"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+
+  const messaging = firebase.messaging();
+
+  async function getTokenAndSend() {
+    try {
+      await Notification.requestPermission();
+      const token = await messaging.getToken({ vapidKey: 'BHt41K-E8ypCdYO1KXtEjA0IjZca4fMcqk2olg-q1QQW_heJS6VsmJXPTXYMKsG_wWlHA01fmfVHJcDDX_3JqNI' });
+      if (token) {
+        Streamlit.setComponentValue(token);
+      } else {
+        console.log('No registration token available.');
+      }
+    } catch (err) {
+      console.error('Error retrieving token.', err);
+    }
+  }
+
+  getTokenAndSend();
+</script>
+"""
+
+# Inject into Streamlit
+token = components.html(fcm_js, height=0)
+
+# Save token to Firestore if available
+if token and token != "null":
+    if "saved_token" not in st.session_state or st.session_state.saved_token != token:
+        save_token_to_firestore(token)
+        st.session_state.saved_token = token
+
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
