@@ -296,21 +296,26 @@ db = firestore.client()
 
 # === SAVE DEVICE TOKEN ===
 def save_token_to_firestore(token):
-    doc_ref = db.collection("device_tokens").document(token)
-    doc_ref.set({"timestamp": datetime.datetime.utcnow()})
-    st.success(f"Device token saved to Firestore: {token}")
-
+    if "saved_tokens" not in st.session_state:
+        st.session_state.saved_tokens = set()
+    if token not in st.session_state.saved_tokens:
+        doc_ref = db.collection("device_tokens").document(token)
+        doc_ref.set({"timestamp": datetime.datetime.utcnow()})
+        st.session_state.saved_tokens.add(token)
+        st.success(f"Device token saved to Firestore: {token}")
 
 # === CHECK QUERY PARAM FOR TOKEN ===
-def handle_token():
-    query_params = st.experimental_get_query_params()
-    if "token" in query_params:
-        token = query_params["token"][0]
-        if "saved_token" not in st.session_state or st.session_state.saved_token != token:
-            save_token_to_firestore(token)
-            st.session_state.saved_token = token
+def handle_token_once():
+    if "token_handled" not in st.session_state:
+        query_params = st.query_params()
+        if "token" in query_params:
+            token = query_params["token"][0]
+            if "saved_token" not in st.session_state or st.session_state.saved_token != token:
+                save_token_to_firestore(token)
+                st.session_state.saved_token = token
+        st.session_state.token_handled = True
 
-handle_token()
+handle_token_once()
 
 # === SEND PUSH NOTIFICATION ===
 def send_push_notification(token, title, body):
@@ -326,10 +331,11 @@ def send_push_notification(token, title, body):
         st.info(f"Notification sent! Message ID: {response}")
     except Exception as e:
         st.error(f"❌ Push notification failed: {e}")
-    
+
 if "fcm_loaded" not in st.session_state:
     st.session_state.fcm_loaded = True
-    components.iframe("https://pivotal-crawler-459812-m5.web.app/fcm.html", height=0)
+    with st.empty():
+        components.iframe("https://pivotal-crawler-459812-m5.web.app/fcm.html", height=0)
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
