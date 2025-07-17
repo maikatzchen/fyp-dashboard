@@ -8,7 +8,6 @@ from datetime import date
 import ee
 import ast
 import folium
-import streamlit.components.v1 as components
 from streamlit_folium import st_folium
 from google.oauth2 import service_account
 from google.cloud import aiplatform_v1
@@ -19,13 +18,6 @@ from google.cloud.aiplatform_v1.services.endpoint_service import EndpointService
 from google.cloud.aiplatform_v1.services.model_service import ModelServiceClient
 from google.cloud.aiplatform_v1.services.prediction_service import PredictionServiceClient
 from google.cloud import secretmanager
-import firebase_admin
-from firebase_admin import firestore
-from firebase_admin import messaging
-from firebase_admin import credentials as firebase_credentials
-from flask import Flask, send_from_directory
-from streamlit.web.server import Server
-import os
 
 # === GCP AUTHENTICATION ===
 def access_secret(secret_id):
@@ -217,6 +209,7 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
     response = requests.get(url, params=params)
 
     if response.status_code != 200:
+        st.error(f"[Open-Meteo API error] {response.status_code}: {response.text}")
         return None
 
     try:
@@ -255,7 +248,7 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
 
     # Get deployed model info
     project = "pivotal-crawler-459812-m5"
-    endpoint_id = "2863968305612324864"
+    endpoint_id = "8314449754637467648"
     location = "us-east1"
     endpoint_name = f"projects/{project}/locations/{location}/endpoints/{endpoint_id}"
 
@@ -286,114 +279,6 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
         st.error("❌ No predictions returned.")
         return None
 
-# === FIREBASE BACKEND SETUP ===
-@st.cache_resource
-def initialize_firebase():
-    firebase_key = json.loads(access_secret("firebase-service-account"))
-    cred = firebase_credentials.Certificate(firebase_key)
-    return firebase_admin.initialize_app(cred)
-
-initialize_firebase()
-
-db = firestore.client()
-
-# === SAVE DEVICE TOKEN ===
-def save_token_to_firestore(token):
-    if "saved_tokens" not in st.session_state:
-        st.session_state.saved_tokens = set()
-    if token not in st.session_state.saved_tokens:
-        doc_ref = db.collection("device_tokens").document(token)
-        doc_ref.set({"timestamp": datetime.datetime.utcnow()})
-        st.session_state.saved_tokens.add(token)
-        st.success(f"Device token saved to Firestore: {token}")
-
-# === GET ALL DEVICE TOKENS ===
-def get_all_device_tokens():
-    tokens_ref = db.collection("device_tokens")
-    docs = tokens_ref.stream()
-    return [doc.id for doc in docs]
-
-if "tokens" not in st.session_state:
-    st.session_state.tokens = get_all_device_tokens()
-
-# === SEND PUSH NOTIFICATION ===
-def send_push_notification(token, title, body):
-    try:
-        message = messaging.Message(
-            notification=messaging.Notification(
-                title=title,
-                body=body
-            ),
-            token=token
-        )
-        response = messaging.send(message)
-        st.info(f"Notification sent! Message ID: {response}")
-    except Exception as e:
-        st.error(f"❌ Push notification failed: {e}")
-
-fcm_js = """
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDV_7UdNmGlyGA2gXShjzUoVDcNVUcD0Zo",
-    authDomain: "pivotal-crawler-459812-m5.firebaseapp.com",
-    projectId: "pivotal-crawler-459812-m5",
-    storageBucket: "pivotal-crawler-459812-m5.appspot.com",
-    messagingSenderId: "85676216639",
-    appId: "1:85676216639:web:574d48b8f858c867b1038a",
-    measurementId: "G-YBDLNQ6C81"
-  };
-  firebase.initializeApp(firebaseConfig);
-  
-  const messaging = firebase.messaging();
-  
-  // Register external service worker
-  navigator.serviceWorker.register('https://pivotal-crawler-459812-m5.web.app/firebase-messaging-sw.js')
-    .then((registration) => {
-      messaging.useServiceWorker(registration);
-      console.log('✅ Service worker registered.');
-    }).catch((err) => {
-      console.error('❌ Service worker registration failed:', err);
-    });
-
-  async function getTokenAndSend() {
-    try {
-      await Notification.requestPermission();
-      const token = await messaging.getToken({ vapidKey: 'BHt41K-E8ypCdYO1KXtEjA0IjZca4fMcqk2olg-q1QQW_heJS6VsmJXPTXYMKsG_wWlHA01fmfVHJcDDX_3JqNI' });
-      if (token) {
-        Streamlit.setComponentValue(token);
-      } else {
-        console.log('No token available.');
-      }
-    } catch (err) {
-      console.error('Token error:', err);
-    }
-  }
-  getTokenAndSend();
-</script>
-"""
-
-
-if "firebase_initialized" not in st.session_state:
-    token = components.html(fcm_js, height=0, scrolling=False)
-    st.session_state.firebase_initialized = True
-else:
-    token = st.session_state.get("saved_token", None)
-
-# Save token if new
-if isinstance(token, str) and token != "null" and token not in st.session_state.get("saved_tokens", set()):
-    save_token_to_firestore(token)
-    st.session_state.saved_token = token
-
-# === LOAD FIREBASE TOKEN ONCE ===
-if "firebase_token_loaded" not in st.session_state:
-    token = components.html(fcm_js, height=0, scrolling=False)
-    st.session_state.firebase_token_loaded = True
-    if isinstance(token, str) and token != "null":
-        if "saved_token" not in st.session_state or st.session_state.saved_token != token:
-            save_token_to_firestore(token)
-            st.session_state.saved_token = token
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
@@ -420,20 +305,18 @@ use_openmeteo = st.sidebar.checkbox("🌐 Use Open-Meteo API for Daily Rainfall?
 
 # Get real-time values
 month = selected_date.month
-openmeteo_result = get_openmeteo_rainfall(lat, lon, selected_date, selected_date)
-if openmeteo_result:
-    rainfall_day = openmeteo_result["daily_rainfall"]
-    rainfall_3d = openmeteo_result["rainfall_3d"]
-    source = openmeteo_result["source"]
-else:
-    st.warning("⚠️ Open-Meteo failed, switching to GEE...")
-    try:
+if use_openmeteo:
+    openmeteo_result = get_openmeteo_rainfall(lat, lon, selected_date, selected_date)
+    if openmeteo_result:
+        rainfall_day = openmeteo_result["daily_rainfall"]
+        rainfall_3d = openmeteo_result["rainfall_3d"]  # Use Open-Meteo's 3-day rainfall
+        source = openmeteo_result["source"]
+    else:
         rainfall_day, source = get_daily_rainfall_gee(lat, lon, selected_date)
         rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
-    except Exception as e:
-        st.error(f"❌ All sources failed: {e}")
-        rainfall_day = rainfall_3d = 0.0
-        source = "None"
+else:
+    rainfall_day, source = get_daily_rainfall_gee(lat, lon, selected_date)
+    rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
 col1, col2 = st.columns(2)
 # col3.metric("Current Rainfall (mm)", f"{rainfall_hour:.2f}")
@@ -447,7 +330,7 @@ col2.metric(
 # === Optional Map (showing location) ===
 map_col, predict_col = st.columns([2, 1])  # Wider map, narrower prediction block
 
-if "map" not in st.session_state:
+with map_col:
     m = folium.Map(location=[lat, lon], zoom_start=10)
     folium.Marker(
         [lat, lon],
@@ -455,20 +338,17 @@ if "map" not in st.session_state:
         icon=folium.Icon(color="red", icon="info-sign")
     ).add_to(m)
 
+    # --- VISUALIZE WITH 5KM RADIUS ---
     folium.Circle(
         location=[lat, lon],
-        radius=10000,
+        radius=10000,  # 5 km
         color="blue",
         fill=True,
         fill_opacity=0.2,
-        popup="10 km radius"
+        popup="5 km radius"
     ).add_to(m)
 
-    st.session_state.map = m
-
-st_folium(st.session_state.map, width=1000, height=500)
-
-
+    st_folium(m, width=1000, height=500)
 
 with predict_col:
     st.markdown("### 🎯 Flood Prediction")
@@ -504,37 +384,34 @@ with predict_col:
                 scores = scores_raw
 
             # Display prediction result
-                if classes and scores:
-                    if '1' in classes:
-                        flood_index = classes.index('1')
-                        flood_prob = float(scores[flood_index])
-                        no_flood_prob = 1 - flood_prob
+            if classes and scores:
+                if '1' in classes:
+                    flood_index = classes.index('1')
+                    flood_prob = float(scores[flood_index])
+                    no_flood_prob = 1 - flood_prob
 
-                        flood_percent = round(flood_prob * 100, 2)
-                        no_flood_percent = round(no_flood_prob * 100, 2)
+                    flood_percent = round(flood_prob * 100, 2)
+                    no_flood_percent = round(no_flood_prob * 100, 2)
 
-                        st.metric("🌊 Flood Probability", f"{flood_percent}%")
-                        st.metric("☀️ No Flood Probability", f"{no_flood_percent}%")
+                
+                    st.metric("🌊 Flood Probability", f"{flood_percent}%")
+                    st.metric("☀️ No Flood Probability", f"{no_flood_percent}%")
 
-                        predicted_class = "Flood" if flood_prob >= no_flood_prob else "No Flood"
+                    predicted_class = "Flood" if flood_prob >= no_flood_prob else "No Flood"
 
-                        if predicted_class == "Flood":
-                            st.error(f"🚨 **Predicted: {predicted_class}**")
-
-                            # Send push notification if risk >= 60%
-                            if flood_percent >= 60:
-                                if "tokens" in st.session_state and st.session_state.tokens:
-                                    for t in st.session_state.tokens:
-                                        send_push_notification(
-                                            t,
-                                            "🌊 Flood Risk Alert",
-                                            f"⚠️ High flood risk predicted ({flood_percent}%) for {selected_district} on {selected_date}!"
-                                        )
-                                else:
-                                    st.warning("⚠️ No device tokens saved. User needs to enable notifications.")
-                        else:
-                            st.success(f"✅ **Predicted: {predicted_class}**")
+                    if predicted_class == "Flood":
+                        st.error(f"🚨 **Predicted: {predicted_class}**")
                     else:
-                        st.error("❌ Class '1' (Flood) not found in model response.")
-                        st.write("🔎 Classes:", classes)
+                        st.success(f"✅ **Predicted: {predicted_class}**")
+                else:
+                    st.error("❌ Class '1' (Flood) not found in model response.")
+                    st.write("🔎 Classes:", classes)
+            else:
+                st.error("❌ Prediction response missing scores or classes.")
 
+import os
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))  # Cloud Run provides $PORT
+    st.run(host="0.0.0.0", port=port)
+i
