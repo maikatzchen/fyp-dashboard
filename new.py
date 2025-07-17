@@ -23,6 +23,9 @@ import firebase_admin
 from firebase_admin import firestore
 from firebase_admin import messaging
 from firebase_admin import credentials as firebase_credentials
+from flask import Flask, send_from_directory
+from streamlit.web.server import Server
+import os
 
 # === GCP AUTHENTICATION ===
 def access_secret(secret_id):
@@ -293,6 +296,18 @@ def initialize_firebase():
 initialize_firebase()
 
 db = firestore.client()
+
+# Get Streamlit’s underlying Flask app
+app = Server.get_current()._server.app
+
+# Serve the service worker
+@app.route('/firebase-messaging-sw.js')
+def serve_service_worker():
+    return send_from_directory(
+        os.path.dirname(__file__),
+        'firebase-messaging-sw.js',
+        mimetype='application/javascript'
+    )
 
 # === SAVE DEVICE TOKEN ===
 def save_token_to_firestore(token):
