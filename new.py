@@ -284,17 +284,41 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
 
 # === FIREBASE BACKEND SETUP ===
 @st.cache_resource
+# === FIREBASE BACKEND SETUP ===
+@st.cache_resource
 def initialize_firebase():
-    # Get secret from Secret Manager
-    client = secretmanager.SecretManagerServiceClient()
-    secret_name = "projects/fyp-dashboard-47421/secrets/firebase-service-account/versions/latest"
-    response = client.access_secret_version(request={"name": secret_name})
-    firebase_key = json.loads(response.payload.data.decode("UTF-8"))
+    firebase_key = None
 
+    try:
+        # Try Secret Manager first
+        from google.cloud import secretmanager
+        client = secretmanager.SecretManagerServiceClient()
+        secret_name = "projects/fyp-dashboard-47421/secrets/firebase-service-account/versions/latest"
+        response = client.access_secret_version(request={"name": secret_name})
+        firebase_key = json.loads(response.payload.data.decode("UTF-8"))
+        st.info("✅ Loaded Firebase key from Secret Manager")
+    except Exception as e:
+        st.warning(f"⚠️ Secret Manager unavailable: {e}")
+        try:
+            # Fallback: Streamlit secrets
+            firebase_key = json.loads(st.secrets["firebase-service-account"])
+            st.info("✅ Loaded Firebase key from st.secrets")
+        except Exception as e:
+            st.warning(f"⚠️ st.secrets unavailable: {e}")
+            try:
+                # Fallback: environment variable
+                firebase_key = json.loads(os.environ["FIREBASE_SERVICE_ACCOUNT"])
+                st.info("✅ Loaded Firebase key from environment variable")
+            except Exception as e:
+                st.error("❌ No Firebase credentials found! Please set them in st.secrets or as env var.")
+                raise e
+
+    from firebase_admin import credentials, initialize_app
     cred = credentials.Certificate(firebase_key)
-    return firebase_admin.initialize_app(cred)
+    return initialize_app(cred)
 
 initialize_firebase()
+
 
 
 # === SAVE DEVICE TOKEN ===
