@@ -302,6 +302,7 @@ def save_token_to_firestore(token):
 
 
 # === CHECK QUERY PARAM FOR TOKEN ===
+query_params = st.query_params
 if "token" in query_params:
     token = query_params["token"][0]
     save_token_to_firestore(token)
