@@ -340,7 +340,7 @@ components.html("""
 
   Notification.requestPermission().then((permission) => {
     if (permission === 'granted') {
-      navigator.serviceWorker.register('/firebase-messaging-sw.js')
+      navigator.serviceWorker.register('https://pivotal-crawler-459812-m5.web.app/firebase-messaging-sw.js')
       .then((registration) => {
         messaging.getToken({
           vapidKey: "BHt41K-E8ypCdYO1KXtEjA0IjZca4fMcqk2olg-q1QQW_heJS6VsmJXPTXYMKsG_wWlHA01fmfVHJcDDX_3JqNI",
