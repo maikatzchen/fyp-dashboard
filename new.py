@@ -374,10 +374,10 @@ fcm_js = """
       console.error('Error retrieving token.', err);
     }
   }
-if (!window.tokenAlreadySent) {
-    getTokenAndSend();
-    window.tokenAlreadySent = true;
-  }
+if (!window.localStorage.getItem("fcmTokenSaved")) {
+  getTokenAndSend();
+  window.localStorage.setItem("fcmTokenSaved", "true");
+}
 </script>
 """
 
@@ -389,7 +389,6 @@ if isinstance(token, str) and token != "null":
     if "saved_token" not in st.session_state or st.session_state.saved_token != token:
         save_token_to_firestore(token)
         st.session_state.saved_token = token
-
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
@@ -443,7 +442,7 @@ col2.metric(
 # === Optional Map (showing location) ===
 map_col, predict_col = st.columns([2, 1])  # Wider map, narrower prediction block
 
-with map_col:
+if "map" not in st.session_state:
     m = folium.Map(location=[lat, lon], zoom_start=10)
     folium.Marker(
         [lat, lon],
@@ -451,17 +450,15 @@ with map_col:
         icon=folium.Icon(color="red", icon="info-sign")
     ).add_to(m)
 
-    # --- VISUALIZE WITH 5KM RADIUS ---
     folium.Circle(
         location=[lat, lon],
-        radius=10000,  # 5 km
+        radius=10000,
         color="blue",
         fill=True,
         fill_opacity=0.2,
-        popup="5 km radius"
+        popup="10 km radius"
     ).add_to(m)
-    
-if "map" not in st.session_state:
+
     st.session_state.map = m
 
 st_folium(st.session_state.map, width=1000, height=500)
