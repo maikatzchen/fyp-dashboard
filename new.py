@@ -251,7 +251,7 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
 
     # Get deployed model info
     project = "pivotal-crawler-459812-m5"
-    endpoint_id = "6385437967564931072"
+    endpoint_id = "2863968305612324864"
     location = "us-east1"
     endpoint_name = f"projects/{project}/locations/{location}/endpoints/{endpoint_id}"
 
