@@ -292,7 +292,7 @@ def initialize_firebase():
 initialize_firebase()
 
 from firebase_admin import firestore
-db = firestore.client()
+db = firestore.client(database='dashboardfirestore')
 
 # === SAVE DEVICE TOKEN ===
 def save_token_to_firestore(token):
