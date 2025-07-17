@@ -251,7 +251,7 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
 
     # Get deployed model info
     project = "pivotal-crawler-459812-m5"
-    endpoint_id = "8314449754637467648"
+    endpoint_id = "6385437967564931072"
     location = "us-east1"
     endpoint_name = f"projects/{project}/locations/{location}/endpoints/{endpoint_id}"
 
@@ -407,18 +407,20 @@ use_openmeteo = st.sidebar.checkbox("🌐 Use Open-Meteo API for Daily Rainfall?
 
 # Get real-time values
 month = selected_date.month
-if use_openmeteo:
-    openmeteo_result = get_openmeteo_rainfall(lat, lon, selected_date, selected_date)
-    if openmeteo_result:
-        rainfall_day = openmeteo_result["daily_rainfall"]
-        rainfall_3d = openmeteo_result["rainfall_3d"]  # Use Open-Meteo's 3-day rainfall
-        source = openmeteo_result["source"]
-    else:
+openmeteo_result = get_openmeteo_rainfall(lat, lon, selected_date, selected_date)
+if openmeteo_result:
+    rainfall_day = openmeteo_result["daily_rainfall"]
+    rainfall_3d = openmeteo_result["rainfall_3d"]
+    source = openmeteo_result["source"]
+else:
+    st.warning("⚠️ Open-Meteo failed, switching to GEE...")
+    try:
         rainfall_day, source = get_daily_rainfall_gee(lat, lon, selected_date)
         rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
-else:
-    rainfall_day, source = get_daily_rainfall_gee(lat, lon, selected_date)
-    rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
+    except Exception as e:
+        st.error(f"❌ All sources failed: {e}")
+        rainfall_day = rainfall_3d = 0.0
+        source = "None"
 
 col1, col2 = st.columns(2)
 # col3.metric("Current Rainfall (mm)", f"{rainfall_hour:.2f}")
