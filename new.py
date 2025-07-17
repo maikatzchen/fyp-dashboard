@@ -20,6 +20,7 @@ from google.cloud.aiplatform_v1.services.model_service import ModelServiceClient
 from google.cloud.aiplatform_v1.services.prediction_service import PredictionServiceClient
 from google.cloud import secretmanager
 import firebase_admin
+from firebase_admin import messaging
 from firebase_admin import credentials as firebase_credentials
 
 # === GCP AUTHENTICATION ===
@@ -212,7 +213,6 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
     response = requests.get(url, params=params)
 
     if response.status_code != 200:
-        print(f"[Open-Meteo API error] {response.status_code}: {response.text}")
         return None
 
     try:
@@ -302,11 +302,15 @@ def save_token_to_firestore(token):
 
 
 # === CHECK QUERY PARAM FOR TOKEN ===
-query_params = st.query_params
-if "token" in query_params:
-    token = query_params["token"][0]
-    save_token_to_firestore(token)
+def handle_token():
+    query_params = st.experimental_get_query_params()
+    if "token" in query_params:
+        token = query_params["token"][0]
+        if "saved_token" not in st.session_state or st.session_state.saved_token != token:
+            save_token_to_firestore(token)
+            st.session_state.saved_token = token
 
+handle_token()
 
 # === SEND PUSH NOTIFICATION ===
 def send_push_notification(token, title, body):
@@ -471,11 +475,4 @@ with predict_col:
                     else:
                         st.error("❌ Class '1' (Flood) not found in model response.")
                         st.write("🔎 Classes:", classes)
-
-
-import os
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))  # Cloud Run provides $PORT
-    st.run(host="0.0.0.0", port=port)
 
