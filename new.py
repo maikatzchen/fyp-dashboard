@@ -320,17 +320,6 @@ def send_push_notification(token, title, body):
     response = messaging.send(message)
     st.info(f"Notification sent! Message ID: {response}")
 
-
-# === STREAMLIT UI ===
-st.title("🔥 Firebase Push Notifications (Demo)")
-
-if st.button("Send Test Notification"):
-    if "tokens" in st.session_state and st.session_state.tokens:
-        for t in st.session_state.tokens:
-            send_push_notification(t, "FYP Alert 🚨", "This is a test push notification.")
-    else:
-        st.warning("No device tokens saved yet. Enable notifications in browser first.")
-
 components.html("""
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging.js"></script>
