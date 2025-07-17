@@ -1,7 +1,7 @@
-importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js');
-importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js');
+import { initializeApp } from 'firebase/app';
+import { getMessaging } from 'firebase/messaging/sw';
 
-firebase.initializeApp({
+firebase.initializeApp = {
   apiKey: "AIzaSyDV_7UdNmGlyGA2gXShjzUoVDcNVUcD0Zo",
   authDomain: "pivotal-crawler-459812-m5.firebaseapp.com",
   projectId: "pivotal-crawler-459812-m5",
@@ -9,6 +9,7 @@ firebase.initializeApp({
   messagingSenderId: "85676216639",
   appId: "1:85676216639:web:574d48b8f858c867b1038a",
   measurementId: "G-YBDLNQ6C81"
-});
+};
 
-const messaging = firebase.messaging();
+const app = initializeApp(firebaseConfig);
+const messaging = getMessaging(app);
