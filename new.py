@@ -19,8 +19,7 @@ from google.cloud.aiplatform_v1.services.endpoint_service import EndpointService
 from google.cloud.aiplatform_v1.services.model_service import ModelServiceClient
 from google.cloud.aiplatform_v1.services.prediction_service import PredictionServiceClient
 from google.cloud import secretmanager
-import firebase_admin
-from firebase_admin import credentials, messaging
+from firebase_admin import credentials as firebase_credentials
 
 # === GCP AUTHENTICATION ===
 def access_secret(secret_id):
@@ -286,7 +285,7 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
 @st.cache_resource
 def initialize_firebase():
     firebase_key = json.loads(access_secret("firebase-service-account"))
-    cred = credentials.Certificate(firebase_key)
+    cred = firebase_credentials.Certificate(firebase_key)
     return firebase_admin.initialize_app(cred)
 
 initialize_firebase()
