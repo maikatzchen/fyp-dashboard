@@ -213,7 +213,7 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
     response = requests.get(url, params=params)
 
     if response.status_code != 200:
-        st.error(f"[Open-Meteo API error] {response.status_code}: {response.text}")
+        st.error(f"[Open-Meteo API error] Open-Meteo provides data only 7 days in the past and up to 16 days in the future. Switching to IMERG/CHIRPS historical data...")
         return None
 
     try:
@@ -499,7 +499,7 @@ with predict_col:
 
 st.header("🌊 Flood Alert Subscription")
 
-email = st.text_input("Enter your email to subscribe or unsubscribe:")
+email = st.text_input("📩 Subscribe with your email to receive flood alerts:")
 
 col1, col2 = st.columns(2)
 with col1:
