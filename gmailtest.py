@@ -10,9 +10,10 @@ from firebase_admin import credentials, firestore
 GMAIL_USER = st.secrets["GMAIL_USER"]
 GMAIL_APP_PASSWORD = st.secrets["GMAIL_APP_PASSWORD"]
 
+
 # Initialize Firestore
 if not firebase_admin._apps:
-    cred = credentials.Certificate(st.secrets["FIREBASE_CREDENTIALS"])
+    cred = credentials.Certificate(json.loads(st.secrets["FIREBASE_CREDENTIALS"]))
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
