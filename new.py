@@ -199,7 +199,6 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
 
     # Fetch 3 days before start_date up to selected_date
     start_date_api = start_date - datetime.timedelta(days=3)
-
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
         "latitude": lat,
@@ -225,13 +224,13 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
 
         if selected_date_str in dates:
             index = dates.index(selected_date_str)
-            daily_rainfall = precipitation[index]
+            daily_rainfall = precipitation[index] or 0.0
 
             # Get rainfall for 3 days before selected_date
             if index >= 3:
-                rainfall_3d = sum(precipitation[index - 3:index])
+                rainfall_3d = sum(p or 0 for p in precipitation[index - 3:index])
             else:
-                rainfall_3d = None  # Not enough data for 3-day accumulation
+                rainfall_3d = sum(p or 0 for p in precipitation[:index])
 
             return {
                 "daily_rainfall": daily_rainfall,
@@ -242,7 +241,7 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
             st.warning("⚠️ Open-Meteo returned no data for selected date.")
             return None
     except KeyError:
-        st.warning("⚠️ Missing data in Open-Meteo response.")
+        st.warning("⚠️ Missing data in Open-Meteo response. Falling back to CHIRPS...")
         return None
 
 # === AUTO-DETECT MODEL SCHEMA & CALL PREDICTION ===
