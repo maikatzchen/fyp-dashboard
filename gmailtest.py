@@ -20,7 +20,7 @@ if not firebase_admin._apps:
     
 # Only parse if it's a string
 if isinstance(firebase_creds, str):
-    import json
+    
     firebase_creds = json.loads(firebase_creds)
 
 cred = credentials.Certificate(firebase_creds)
