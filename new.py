@@ -252,7 +252,7 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
 
     # Get deployed model info
     project = "pivotal-crawler-459812-m5"
-    endpoint_id = "8314449754637467648"
+    endpoint_id = "4787005346499526656"
     location = "us-east1"
     endpoint_name = f"projects/{project}/locations/{location}/endpoints/{endpoint_id}"
 
@@ -287,7 +287,7 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
 # FIRESTORE INITIALIZATION
 # ------------------------------
 if not firebase_admin._apps:
-    firebase_creds = st.secrets["FIREBASE_CREDENTIALS"]
+    firebase_creds = json.loads(access_secret("FIREBASE_CREDENTIALS"))
 
     # Convert to plain dict if needed
     if not isinstance(firebase_creds, dict):
@@ -306,8 +306,8 @@ SUBSCRIBERS_COLLECTION = "subscribers"
 # ------------------------------
 # GMAIL CONFIG
 # ------------------------------
-GMAIL_USER = st.secrets["GMAIL_USER"]
-GMAIL_APP_PASSWORD = st.secrets["GMAIL_APP_PASSWORD"]
+GMAIL_USER = access_secret["GMAIL_USER"]
+GMAIL_APP_PASSWORD = access_secret["GMAIL_APP_PASSWORD"]
 
 def add_subscriber(email):
     doc_ref = db.collection(SUBSCRIBERS_COLLECTION).document(email)
