@@ -372,7 +372,7 @@ if openmeteo_result:
     source = openmeteo_result["source"]
 else:
     rainfall_day, source = get_daily_rainfall_chirps(lat, lon, selected_date)
-    rainfall_3d = get_gee_3day_chirps(lat, lon, selected_date)
+    rainfall_3d = get_3day_rainfall_chirps(lat, lon, selected_date)
     
     if rainfall_day == 0.0 and rainfall_3d == 0.0:
         rainfall_day, source = get_daily_rainfall_gee(lat, lon, selected_date)
