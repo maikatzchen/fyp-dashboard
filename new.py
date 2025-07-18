@@ -306,8 +306,8 @@ SUBSCRIBERS_COLLECTION = "subscribers"
 # ------------------------------
 # GMAIL CONFIG
 # ------------------------------
-GMAIL_USER = access_secret["GMAIL_USER"]
-GMAIL_APP_PASSWORD = access_secret["GMAIL_APP_PASSWORD"]
+GMAIL_USER = access_secret("GMAIL_USER")
+GMAIL_APP_PASSWORD = access_secret("GMAIL_APP_PASSWORD")
 
 def add_subscriber(email):
     doc_ref = db.collection(SUBSCRIBERS_COLLECTION).document(email)
