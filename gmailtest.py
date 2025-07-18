@@ -7,8 +7,9 @@ from email.mime.text import MIMEText
 # ------------------------------
 # CONFIG
 # ------------------------------
-GMAIL_USER = "farahsyafawati@gmail.com"  # Your Gmail address
-GMAIL_APP_PASSWORD = "dois olth dqbw wiks"  # 16-character app password
+GMAIL_USER = st.secrets["GMAIL_USER"]
+GMAIL_APP_PASSWORD = st.secrets["GMAIL_APP_PASSWORD"]
+
 SUBSCRIBERS_FILE = "subscribers.json"
 
 
