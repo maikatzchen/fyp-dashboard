@@ -364,23 +364,20 @@ lat, lon = districts[selected_district]
 # === Real-Time Weather Panel ===
 st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
 
-# === Sidebar Option ===
-use_openmeteo = st.sidebar.checkbox("🌐 Use Open-Meteo API for Daily Rainfall?", value=False)
-
 # Get real-time values
 month = selected_date.month
-if use_openmeteo:
-    openmeteo_result = get_openmeteo_rainfall(lat, lon, selected_date, selected_date)
-    if openmeteo_result:
-        rainfall_day = openmeteo_result["daily_rainfall"]
-        rainfall_3d = openmeteo_result["rainfall_3d"]  # Use Open-Meteo's 3-day rainfall
-        source = openmeteo_result["source"]
-    else:
+openmeteo_result = get_openmeteo_rainfall(lat, lon, selected_date, selected_date)
+if openmeteo_result:
+    rainfall_day = openmeteo_result["daily_rainfall"]
+    rainfall_3d = openmeteo_result["rainfall_3d"]  # Use Open-Meteo's 3-day rainfall
+    source = openmeteo_result["source"]
+else:
+    rainfall_day, source = get_daily_rainfall_chirps(lat, lon, selected_date)
+    rainfall_3d = get_gee_3day_chirps(lat, lon, selected_date)
+    
+    if rainfall_day == 0.0 and rainfall_3d == 0.0:
         rainfall_day, source = get_daily_rainfall_gee(lat, lon, selected_date)
         rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
-else:
-    rainfall_day, source = get_daily_rainfall_gee(lat, lon, selected_date)
-    rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
 
 col1, col2 = st.columns(2)
 # col3.metric("Current Rainfall (mm)", f"{rainfall_hour:.2f}")
