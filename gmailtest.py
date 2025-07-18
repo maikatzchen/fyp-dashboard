@@ -16,15 +16,15 @@ GMAIL_APP_PASSWORD = st.secrets["GMAIL_APP_PASSWORD"]
 if not firebase_admin._apps:
     firebase_creds = st.secrets["FIREBASE_CREDENTIALS"]
 
-# Only parse if it's a string
-if not isinstance(firebase_creds, dict):
-    import json
-    firebase_creds = json.loads(firebase_creds)
-else:
-    firebase_creds = dict(firebase_creds)
+    # Only parse if it's a string
+    if not isinstance(firebase_creds, dict):
+        import json
+        firebase_creds = json.loads(firebase_creds)
+    else:
+        firebase_creds = dict(firebase_creds)
     
-cred = credentials.Certificate(firebase_creds)
-firebase_admin.initialize_app(cred)
+    cred = credentials.Certificate(firebase_creds)
+    firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
