@@ -1,8 +1,8 @@
 import streamlit as st
-import json
-import os
 import smtplib
 from email.mime.text import MIMEText
+import firebase_admin
+from firebase_admin import credentials, firestore
 
 # ------------------------------
 # CONFIG
@@ -10,7 +10,13 @@ from email.mime.text import MIMEText
 GMAIL_USER = st.secrets["GMAIL_USER"]
 GMAIL_APP_PASSWORD = st.secrets["GMAIL_APP_PASSWORD"]
 
-SUBSCRIBERS_FILE = "subscribers.json"
+# Initialize Firestore
+if not firebase_admin._apps:
+    cred = credentials.Certificate(st.secrets["FIREBASE_CREDENTIALS"])
+    firebase_admin.initialize_app(cred)
+db = firestore.client()
+
+SUBSCRIBERS_COLLECTION = "subscribers"
 
 
 # ------------------------------
@@ -34,42 +40,33 @@ def send_email_smtp(subject, message_html, to_email):
 
 
 # ------------------------------
-# SUBSCRIBER MANAGEMENT
+# SUBSCRIBER MANAGEMENT (Firestore)
 # ------------------------------
-def load_subscribers():
-    if os.path.exists(SUBSCRIBERS_FILE):
-        with open(SUBSCRIBERS_FILE, "r") as f:
-            return json.load(f)
-    return []
-
-
-def save_subscribers(emails):
-    with open(SUBSCRIBERS_FILE, "w") as f:
-        json.dump(emails, f)
-
-
 def add_subscriber(email):
-    subscribers = load_subscribers()
-    if email not in subscribers:
-        subscribers.append(email)
-        save_subscribers(subscribers)
-        return True
-    return False
+    doc_ref = db.collection(SUBSCRIBERS_COLLECTION).document(email)
+    if doc_ref.get().exists:
+        return False
+    doc_ref.set({"email": email})
+    return True
 
 
 def remove_subscriber(email):
-    subscribers = load_subscribers()
-    if email in subscribers:
-        subscribers.remove(email)
-        save_subscribers(subscribers)
+    doc_ref = db.collection(SUBSCRIBERS_COLLECTION).document(email)
+    if doc_ref.get().exists:
+        doc_ref.delete()
         return True
     return False
+
+
+def load_subscribers():
+    docs = db.collection(SUBSCRIBERS_COLLECTION).stream()
+    return [doc.id for doc in docs]
 
 
 # ------------------------------
 # STREAMLIT UI
 # ------------------------------
-st.title("🌊 Flood Alert Subscription System")
+st.title("🌊 Flood Alert Subscription System (Firestore)")
 
 email = st.text_input("Enter your email to subscribe/unsubscribe:")
 
@@ -91,14 +88,10 @@ if st.button("Unsubscribe"):
     else:
         st.error("⚠️ Please enter your email.")
 
-# Show current subscribers (testing only — remove for production)
 if st.checkbox("Show current subscribers"):
-    st.write(load_subscribers())
+    subscribers = load_subscribers()
+    st.write(subscribers)
 
-
-# ------------------------------
-# FLOOD ALERT TEST BUTTON
-# ------------------------------
 if st.button("Send Test Flood Alert to All Subscribers"):
     subscribers = load_subscribers()
     if not subscribers:
