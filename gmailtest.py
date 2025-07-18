@@ -1,51 +1,112 @@
-import os.path
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
+import streamlit as st
+import json
+import os
+import smtplib
 from email.mime.text import MIMEText
-import base64
 
-# Gmail API scope for sending email
-SCOPES = ['https://www.googleapis.com/auth/gmail.send']
+# ------------------------------
+# CONFIG
+# ------------------------------
+GMAIL_USER = "farahsyafawati@gmail.com"  # Your Gmail address
+GMAIL_APP_PASSWORD = "dois olth dqbw wiks"  # 16-character app password
+SUBSCRIBERS_FILE = "subscribers.json"
 
-def send_email(subject, message_text, to_email):
-    """Sends an email using the Gmail API."""
-    creds = None
 
-    # Load credentials or prompt user to log in
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+# ------------------------------
+# EMAIL FUNCTION
+# ------------------------------
+def send_email_smtp(subject, message_html, to_email):
+    """Send email using Gmail SMTP."""
+    msg = MIMEText(message_html, 'html')
+    msg['Subject'] = subject
+    msg['From'] = GMAIL_USER
+    msg['To'] = to_email
 
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
+    try:
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+        server.sendmail(GMAIL_USER, [to_email], msg.as_string())
+        server.quit()
+        print(f"✅ Email sent to {to_email}")
+    except Exception as e:
+        print(f"❌ Failed to send email to {to_email}: {e}")
+
+
+# ------------------------------
+# SUBSCRIBER MANAGEMENT
+# ------------------------------
+def load_subscribers():
+    if os.path.exists(SUBSCRIBERS_FILE):
+        with open(SUBSCRIBERS_FILE, "r") as f:
+            return json.load(f)
+    return []
+
+
+def save_subscribers(emails):
+    with open(SUBSCRIBERS_FILE, "w") as f:
+        json.dump(emails, f)
+
+
+def add_subscriber(email):
+    subscribers = load_subscribers()
+    if email not in subscribers:
+        subscribers.append(email)
+        save_subscribers(subscribers)
+        return True
+    return False
+
+
+def remove_subscriber(email):
+    subscribers = load_subscribers()
+    if email in subscribers:
+        subscribers.remove(email)
+        save_subscribers(subscribers)
+        return True
+    return False
+
+
+# ------------------------------
+# STREAMLIT UI
+# ------------------------------
+st.title("🌊 Flood Alert Subscription System")
+
+email = st.text_input("Enter your email to subscribe/unsubscribe:")
+
+if st.button("Subscribe"):
+    if email:
+        if add_subscriber(email):
+            st.success(f"✅ {email} subscribed successfully!")
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        # Save credentials for next run
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
+            st.info("ℹ️ You are already subscribed.")
+    else:
+        st.error("⚠️ Please enter a valid email.")
 
-    # Build Gmail API service
-    service = build('gmail', 'v1', credentials=creds)
+if st.button("Unsubscribe"):
+    if email:
+        if remove_subscriber(email):
+            st.success(f"❌ {email} unsubscribed successfully.")
+        else:
+            st.info("ℹ️ This email is not in the subscriber list.")
+    else:
+        st.error("⚠️ Please enter your email.")
 
-    # Create the email
-    message = MIMEText(message_text, 'html')
-    message['to'] = to_email
-    message['from'] = "your-email@gmail.com"  # Replace with your Gmail
-    message['subject'] = subject
+# Show current subscribers (testing only — remove for production)
+if st.checkbox("Show current subscribers"):
+    st.write(load_subscribers())
 
-    # Encode and send
-    raw_message = {'raw': base64.urlsafe_b64encode(message.as_bytes()).decode()}
-    sent_message = service.users().messages().send(userId="me", body=raw_message).execute()
 
-    print(f"✅ Email sent! Message ID: {sent_message['id']}")
-
-# Test sending an email
-send_email(
-    subject="🌊 Flood Alert Test Email",
-    message_text="<h3>This is a test flood alert from your FYP system.</h3><p>Stay safe!</p>",
-    to_email="recipient@example.com"  # Replace with your email for testing
-)
+# ------------------------------
+# FLOOD ALERT TEST BUTTON
+# ------------------------------
+if st.button("Send Test Flood Alert to All Subscribers"):
+    subscribers = load_subscribers()
+    if not subscribers:
+        st.warning("⚠️ No subscribers found.")
+    else:
+        for sub_email in subscribers:
+            send_email_smtp(
+                subject="🌊 Flood Alert!",
+                message_html="<h3>Flood predicted in your area. Stay safe!</h3>",
+                to_email=sub_email
+            )
+        st.success("✅ Flood alert sent to all subscribers!")
