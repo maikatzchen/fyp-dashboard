@@ -19,7 +19,7 @@ from google.cloud.aiplatform_v1.services.model_service import ModelServiceClient
 from google.cloud.aiplatform_v1.services.prediction_service import PredictionServiceClient
 from google.cloud import secretmanager
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials as firebase_credentials, firestore
 import smtplib
 from email.mime.text import MIMEText
 
@@ -296,7 +296,7 @@ if not firebase_admin._apps:
     else:
         firebase_creds = dict(firebase_creds)
 
-    cred = credentials.Certificate(firebase_creds)
+    cred = firebase_credentials.Certificate(firebase_creds)
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
