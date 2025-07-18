@@ -18,6 +18,10 @@ from google.cloud.aiplatform_v1.services.endpoint_service import EndpointService
 from google.cloud.aiplatform_v1.services.model_service import ModelServiceClient
 from google.cloud.aiplatform_v1.services.prediction_service import PredictionServiceClient
 from google.cloud import secretmanager
+import firebase_admin
+from firebase_admin import credentials, firestore
+import smtplib
+from email.mime.text import MIMEText
 
 # === GCP AUTHENTICATION ===
 def access_secret(secret_id):
@@ -279,6 +283,66 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
         st.error("❌ No predictions returned.")
         return None
 
+# ------------------------------
+# FIRESTORE INITIALIZATION
+# ------------------------------
+if not firebase_admin._apps:
+    firebase_creds = st.secrets["FIREBASE_CREDENTIALS"]
+
+    # Convert to plain dict if needed
+    if not isinstance(firebase_creds, dict):
+        import json
+        firebase_creds = json.loads(firebase_creds)
+    else:
+        firebase_creds = dict(firebase_creds)
+
+    cred = credentials.Certificate(firebase_creds)
+    firebase_admin.initialize_app(cred)
+
+db = firestore.client()
+
+SUBSCRIBERS_COLLECTION = "subscribers"
+
+# ------------------------------
+# GMAIL CONFIG
+# ------------------------------
+GMAIL_USER = st.secrets["GMAIL_USER"]
+GMAIL_APP_PASSWORD = st.secrets["GMAIL_APP_PASSWORD"]
+
+def add_subscriber(email):
+    doc_ref = db.collection(SUBSCRIBERS_COLLECTION).document(email)
+    if doc_ref.get().exists:
+        return False
+    doc_ref.set({"email": email, "subscribed_at": firestore.SERVER_TIMESTAMP})
+    return True
+
+def remove_subscriber(email):
+    doc_ref = db.collection(SUBSCRIBERS_COLLECTION).document(email)
+    if doc_ref.get().exists:
+        doc_ref.delete()
+        return True
+    return False
+
+def load_subscribers():
+    docs = db.collection(SUBSCRIBERS_COLLECTION).stream()
+    return [doc.id for doc in docs]
+
+def send_email_smtp(subject, message_html, to_email):
+    """Send email using Gmail SMTP."""
+    msg = MIMEText(message_html, 'html')
+    msg['Subject'] = subject
+    msg['From'] = GMAIL_USER
+    msg['To'] = to_email
+
+    try:
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+        server.sendmail(GMAIL_USER, [to_email], msg.as_string())
+        server.quit()
+        print(f"✅ Email sent to {to_email}")
+    except Exception as e:
+        print(f"❌ Failed to send email to {to_email}: {e}")
+
 
 # === STREAMLIT UI ===
 st.set_page_config(page_title="Flood Prediction Dashboard", layout="wide")
@@ -401,17 +465,59 @@ with predict_col:
 
                     if predicted_class == "Flood":
                         st.error(f"🚨 **Predicted: {predicted_class}**")
+    
+                        # Send email alerts to all subscribers
+                        subscribers = load_subscribers()
+                        if subscribers:
+                            st.info(f"📧 Sending flood alerts to {len(subscribers)} subscribers...")
+                            for sub_email in subscribers:
+                                send_email_smtp(
+                                    subject="🌊 Flood Alert!",
+                                    message_html=f"""
+                                        <h2>🚨 Flood Predicted!</h2>
+                                        <p>A potential flood has been predicted for <b>{selected_district}</b> on {selected_date.strftime('%Y-%m-%d')}.</p>
+                                        <p>Rainfall Today: {rainfall_day:.2f} mm<br>3-Day Rainfall: {rainfall_3d:.2f} mm</p>
+                                        <p>Stay safe and follow local authorities' instructions.</p>
+                                    """,
+                                    to_email=sub_email
+                            )
+                        st.success("✅ Flood alerts sent to all subscribers!")
                     else:
-                        st.success(f"✅ **Predicted: {predicted_class}**")
+                        st.warning("⚠️ No subscribers to notify.")
+
                 else:
-                    st.error("❌ Class '1' (Flood) not found in model response.")
-                    st.write("🔎 Classes:", classes)
+                    st.success(f"✅ **Predicted: {predicted_class}**")
+
             else:
-                st.error("❌ Prediction response missing scores or classes.")
+                st.error("❌ Class '1' (Flood) not found in model response.")
+                st.write("🔎 Classes:", classes)
+        else:
+            st.error("❌ Prediction response missing scores or classes.")
 
-import os
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))  # Cloud Run provides $PORT
-    st.run(host="0.0.0.0", port=port)
-i
+# === NOTIFICATION SUBSCRIPTION ===
+
+st.header("🌊 Flood Alert Subscription")
+
+email = st.text_input("Enter your email to subscribe or unsubscribe:")
+
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("Subscribe"):
+        if email:
+            if add_subscriber(email):
+                st.success(f"✅ {email} subscribed successfully!")
+            else:
+                st.info("ℹ️ {email} is already subscribed.")
+        else:
+            st.error("⚠️ Please enter a valid email.")
+
+with col2:
+    if st.button("Unsubscribe"):
+        if email:
+            if remove_subscriber(email):
+                st.success(f"❌ {email} unsubscribed successfully.")
+            else:
+                st.info("ℹ️ {email} is not in the subscriber list.")
+        else:
+            st.error("⚠️ Please enter your email.")
