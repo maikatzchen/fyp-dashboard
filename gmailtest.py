@@ -16,6 +16,8 @@ GMAIL_APP_PASSWORD = st.secrets["GMAIL_APP_PASSWORD"]
 if not firebase_admin._apps:
     firebase_creds = st.secrets["FIREBASE_CREDENTIALS"]
 
+    firebase_creds = dict(firebase_creds)
+    
 # Only parse if it's a string
 if isinstance(firebase_creds, str):
     import json
