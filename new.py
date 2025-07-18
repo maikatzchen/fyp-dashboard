@@ -479,17 +479,13 @@ with predict_col:
                                     to_email=sub_email
                             )
                         st.success("✅ Flood alerts sent to all subscribers!")
-                    else:
-                        st.warning("⚠️ No subscribers to notify.")
-
+                    
                 else:
                     st.success(f"✅ **Predicted: {predicted_class}**")
 
             else:
                 st.error("❌ Class '1' (Flood) not found in model response.")
                 st.write("🔎 Classes:", classes)
-    else:
-        st.error("❌ Prediction response missing scores or classes.")
 
 
 # === NOTIFICATION SUBSCRIPTION ===
