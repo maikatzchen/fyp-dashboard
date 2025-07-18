@@ -491,8 +491,8 @@ with predict_col:
             else:
                 st.error("❌ Class '1' (Flood) not found in model response.")
                 st.write("🔎 Classes:", classes)
-        else:
-            st.error("❌ Prediction response missing scores or classes.")
+    else:
+        st.error("❌ Prediction response missing scores or classes.")
 
 
 # === NOTIFICATION SUBSCRIPTION ===
