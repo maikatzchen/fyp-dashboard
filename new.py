@@ -391,7 +391,7 @@ col2.metric(
 map_col, predict_col = st.columns([2, 1])  # Wider map, narrower prediction block
 
 with map_col:
-    m = folium.Map(location=[lat, lon], zoom_start=10)
+    m = folium.Map(location=[lat, lon], zoom_start=12, control_scale=True)
     folium.Marker(
         [lat, lon],
         popup=f"<b>{selected_district}</b><br>Rainfall Today: {rainfall_day} mm<br>3-Day Rainfall: {rainfall_3d} mm",
