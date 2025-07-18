@@ -14,9 +14,16 @@ GMAIL_APP_PASSWORD = st.secrets["GMAIL_APP_PASSWORD"]
 
 # Initialize Firestore
 if not firebase_admin._apps:
+    firebase_creds = st.secrets["FIREBASE_CREDENTIALS"]
+
+# Only parse if it's a string
+if isinstance(firebase_creds, str):
     import json
-    cred = credentials.Certificate(json.loads(st.secrets["FIREBASE_CREDENTIALS"]))
-    firebase_admin.initialize_app(cred)
+    firebase_creds = json.loads(firebase_creds)
+
+cred = credentials.Certificate(firebase_creds)
+firebase_admin.initialize_app(cred)
+
 db = firestore.client()
 st.write(type(st.secrets["FIREBASE_CREDENTIALS"]))
 
