@@ -22,6 +22,7 @@ import firebase_admin
 from firebase_admin import credentials as firebase_credentials, firestore
 import smtplib
 from email.mime.text import MIMEText
+import plotly.graph_objects as go
 
 # === GCP AUTHENTICATION ===
 def access_secret(secret_id):
@@ -483,7 +484,65 @@ with predict_col:
                 st.error("❌ Class '1' (Flood) not found in model response.")
                 st.write("🔎 Classes:", classes)
 
+# === GRAPH FOR VISUALIZATION ===
+st.subheader(f"📊 Rainfall Trends for {selected_district}")
 
+# Function to fetch past 14 days of rainfall (you can modify this to use your existing functions)
+def get_past_rainfall(lat, lon, end_date, days=14):
+    dates = [end_date - datetime.timedelta(days=i) for i in range(days-1, -1, -1)]
+    rainfall_values = []
+    
+    for d in dates:
+        result = get_openmeteo_rainfall(lat, lon, d, d)
+        if result:
+            daily = result["daily_rainfall"]
+        else:
+            daily, _ = get_daily_rainfall_chirps(lat, lon, d)
+            if daily == 0.0:
+                daily, _ = get_daily_rainfall_gee(lat, lon, d)
+        rainfall_values.append(daily)
+    
+    df = pd.DataFrame({
+        "Date": dates,
+        "Daily Rainfall (mm)": rainfall_values
+    })
+    df["3-Day Rainfall (mm)"] = df["Daily Rainfall (mm)"].rolling(window=3).sum()
+    return df
+
+# Get past rainfall data
+rainfall_df = get_past_rainfall(lat, lon, selected_date)
+
+# Create the plot
+fig = go.Figure()
+
+# Daily rainfall bar
+fig.add_trace(go.Bar(
+    x=rainfall_df["Date"],
+    y=rainfall_df["Daily Rainfall (mm)"],
+    name="Daily Rainfall",
+    marker_color="skyblue"
+))
+
+# 3-Day cumulative rainfall line
+fig.add_trace(go.Scatter(
+    x=rainfall_df["Date"],
+    y=rainfall_df["3-Day Rainfall (mm)"],
+    mode="lines+markers",
+    name="3-Day Cumulative Rainfall",
+    line=dict(color="orange", width=2)
+))
+
+# Layout settings
+fig.update_layout(
+    xaxis_title="Date",
+    yaxis_title="Rainfall (mm)",
+    legend_title="Legend",
+    template="plotly_white",
+    hovermode="x unified"
+)
+
+# Show the plot
+st.plotly_chart(fig, use_container_width=True)
 # === NOTIFICATION SUBSCRIPTION ===
 
 st.header("🌊 Flood Alert Subscription")
