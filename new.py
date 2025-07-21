@@ -190,7 +190,7 @@ def get_daily_rainfall_chirps(lat, lon, date_input, suppress_warnings=False):
         return 0.0, "CHIRPS"
         
 # === BACKUP: Get 3-day rainfall from GEE ===
-def get_gee_3day_rainfall(lat, lon, end_date):
+def get_gee_3day_rainfall(lat, lon, end_date, suppress_warnings=False):
     try:
         start_date = end_date - datetime.timedelta(days=3)
         region = ee.Geometry.Point(lon, lat).buffer(10000)  # ✅ 10 km buffer
@@ -242,7 +242,7 @@ def get_3day_rainfall_chirps(lat, lon, end_date, suppress_warnings=False):
 
         result_dict = result.getInfo()
         
-        return result_dict.get("precipitation", 0.0)
+        return result_dict.get("precipitation", 0.0), "CHIRPS"
     except Exception as e:
         if not suppress_warnings:
             st.error(f"[CHIRPS Error - 3-Day] {e}")
@@ -549,7 +549,7 @@ with col1:
             if add_subscriber(email):
                 st.success(f"✅ {email} subscribed successfully!")
             else:
-                st.info("ℹ️ {email} is already subscribed.")
+                st.info(f"ℹ️ {email} is already subscribed.")
         else:
             st.error("⚠️ Please enter a valid email.")
 
