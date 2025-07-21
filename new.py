@@ -79,7 +79,7 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date, suppress_warnings=Fal
 
     if response.status_code != 200:
         if not suppress_warnings:
-            st.error(f"[Open-Meteo API error] Open-Meteo provides data only 7 days in the past and up to 16 days in the future. Switching to IMERG/CHIRPS historical data...")
+            st.warning(f"Open-Meteo provides data only 7 days in the past and up to 16 days in the future. Switching to IMERG/CHIRPS historical data...")
         return None
 
     try:
@@ -150,8 +150,6 @@ def get_daily_rainfall_gee(lat, lon, date_input, suppress_warnings=False):
         return rainfall, "IMERG"
 
     except Exception as e:
-        if not suppress_warnings:
-            
         return get_daily_rainfall_chirps(lat, lon, date_input)
 
 # === BACKUP: Get Daily rainfall from CHIRPS ===
@@ -184,8 +182,6 @@ def get_daily_rainfall_chirps(lat, lon, date_input, suppress_warnings=False):
         return result_dict.get("precipitation", 0.0), "CHIRPS"
 
     except Exception as e:
-        if not suppress_warnings:
-            
         return 0.0, "CHIRPS"
         
 # === BACKUP: Get 3-day rainfall from GEE ===
@@ -216,8 +212,6 @@ def get_gee_3day_rainfall(lat, lon, end_date, suppress_warnings=False):
         return rainfall
 
     except Exception as e:
-        if not suppress_warnings:
-            
         return get_3day_rainfall_chirps(lat, lon, end_date)
 
 
@@ -243,8 +237,6 @@ def get_3day_rainfall_chirps(lat, lon, end_date, suppress_warnings=False):
         
         return result_dict.get("precipitation", 0.0), "CHIRPS"
     except Exception as e:
-        if not suppress_warnings:
-            
         return 0.0, "CHIRPS"
 
 
