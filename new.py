@@ -511,7 +511,7 @@ def get_past_rainfall(lat, lon, end_date, days=14):
     return df
 
 # Get past rainfall data
-rainfall_df = get_past_rainfall(lat, lon, selected_date)
+rainfall_df = get_past_rainfall(lat, lon, selected_date, suppress_warnings=False)
 
 # Create the plot
 fig = go.Figure()
