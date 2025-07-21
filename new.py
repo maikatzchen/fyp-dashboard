@@ -481,6 +481,7 @@ with predict_col:
 st.subheader(f"📊 Rainfall Trends for {selected_district}")
 
 # Function to fetch past 14 days of rainfall (you can modify this to use your existing functions)
+@st.cache_data(ttl=3600)
 def get_past_rainfall(lat, lon, end_date, days=14, suppress_warnings=False):
     dates = [end_date - datetime.timedelta(days=i) for i in range(days-1, -1, -1)]
     rainfall_values = []
