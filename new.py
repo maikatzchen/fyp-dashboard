@@ -3,16 +3,12 @@ import pandas as pd
 import json
 import streamlit as st
 import requests
-import datetime 
 from datetime import date
 import ee
-import ast
 import folium
 from streamlit_folium import st_folium
 from google.oauth2 import service_account
 from google.cloud import aiplatform_v1
-from google.protobuf import json_format
-from google.protobuf.struct_pb2 import Value
 from google.cloud.aiplatform_v1.types import PredictRequest
 from google.cloud.aiplatform_v1.services.endpoint_service import EndpointServiceClient
 from google.cloud.aiplatform_v1.services.model_service import ModelServiceClient
@@ -36,7 +32,7 @@ def access_secret(secret_id):
 service_account_info = json.loads(access_secret("gcp_service_account"))
 credentials = service_account.Credentials.from_service_account_info(service_account_info)
 
-# === LOAD GEE CREDENTIALS FROM STREAMLIT SECRETS ===
+# === LOAD GEE AND VERTEX AI ===
 import urllib3
 
 # Patch TrafficPolice to avoid connection deadlocks
@@ -59,64 +55,61 @@ def get_vertex_ai_clients():
 
 endpoint_client, model_client, prediction_client = get_vertex_ai_clients()
 
-# === FUNCTION: Get 3-day rainfall from GEE ===
-def get_gee_3day_rainfall(lat, lon, end_date):
+# === PRIMARY: Get daily rainfall from Open-Meteo ===
+def get_openmeteo_rainfall(lat, lon, start_date, end_date):
+    """
+    Get daily accumulated rainfall (mm) and 3-day accumulated rainfall (mm before selected_date) from Open-Meteo API
+    """
+    import datetime
+
+    # Fetch 3 days before start_date up to selected_date
+    start_date_api = start_date - datetime.timedelta(days=3)
+    url = "https://api.open-meteo.com/v1/forecast"
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "daily": "precipitation_sum",
+        "timezone": "Asia/Kuala_Lumpur",
+        "start_date": start_date_api.strftime("%Y-%m-%d"),
+        "end_date": end_date.strftime("%Y-%m-%d")
+    }
+
+    response = requests.get(url, params=params)
+
+    if response.status_code != 200:
+        st.error(f"[Open-Meteo API error] Open-Meteo provides data only 7 days in the past and up to 16 days in the future. Switching to IMERG/CHIRPS historical data...")
+        return None
+
     try:
-        start_date = end_date - datetime.timedelta(days=3)
-        region = ee.Geometry.Point(lon, lat).buffer(10000)  # ✅ 10 km buffer
+        data = response.json()
+        precipitation = data['daily']['precipitation_sum']
+        dates = data['daily']['time']
 
-        dataset = ee.ImageCollection("NASA/GPM_L3/IMERG_V06") \
-            .filterDate(str(start_date), str(end_date)) \
-            .select("precipitationCal")
+        selected_date_str = start_date.strftime("%Y-%m-%d")
 
-        rainfall_image = dataset.sum()
-        result = rainfall_image.reduceRegion(
-            reducer=ee.Reducer.mean(),
-            geometry=region,
-            scale=10000,
-            maxPixels=1e9
-        )
+        if selected_date_str in dates:
+            index = dates.index(selected_date_str)
+            daily_rainfall = precipitation[index] or 0.0
 
-        result_dict = result.getInfo()
-        rainfall = result_dict.get("precipitationCal", 0.0)
+            # Get rainfall for 3 days before selected_date
+            if index >= 3:
+                rainfall_3d = sum(p or 0 for p in precipitation[index - 3:index])
+            else:
+                rainfall_3d = sum(p or 0 for p in precipitation[:index])
 
-        if rainfall == 0.0:
-            
-            return get_3day_rainfall_chirps(lat, lon, end_date)
+            return {
+                "daily_rainfall": daily_rainfall,
+                "rainfall_3d": rainfall_3d,
+                "source": "Open-Meteo"
+            }
+        else:
+            st.warning("⚠️ Open-Meteo returned no data for selected date.")
+            return None
+    except KeyError:
+        st.warning("⚠️ Missing data in Open-Meteo response. Falling back to CHIRPS...")
+        return None
 
-        return rainfall
-
-    except Exception as e:
-        st.error(f"[GEE Error - IMERG 3-Day] {e}")
-        return get_3day_rainfall_chirps(lat, lon, end_date)
-
-
-# === BACKUP: Get 3-day rainfall from CHIRPS ===
-def get_3day_rainfall_chirps(lat, lon, end_date):
-    try:
-        start_date = end_date - datetime.timedelta(days=3)
-        region = ee.Geometry.Point(lon, lat).buffer(10000)
-
-        dataset = ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY") \
-            .filterDate(str(start_date), str(end_date)) \
-            .select("precipitation")
-
-        rainfall_image = dataset.sum()
-        result = rainfall_image.reduceRegion(
-            reducer=ee.Reducer.mean(),
-            geometry=region,
-            scale=10000,
-            maxPixels=1e9
-        )
-
-        result_dict = result.getInfo()
-        
-        return result_dict.get("precipitation", 0.0)
-    except Exception as e:
-        st.error(f"[CHIRPS Error - 3-Day] {e}")
-        return 0.0
-
-# === FUNCTION: Get Daily rainfall from GEE ===
+# === BACKUP: Get Daily rainfall from GEE ===
 def get_daily_rainfall_gee(lat, lon, date_input):
     try:
         if isinstance(date_input, datetime.date):
@@ -191,61 +184,65 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         st.error(f"[CHIRPS Error] {e}")
         return 0.0
         
-# === ADD: Get daily rainfall from Open-Meteo ===
-def get_openmeteo_rainfall(lat, lon, start_date, end_date):
-    """
-    Get daily accumulated rainfall (mm) and 3-day accumulated rainfall (mm before selected_date) from Open-Meteo API
-    """
-    import datetime
-
-    # Fetch 3 days before start_date up to selected_date
-    start_date_api = start_date - datetime.timedelta(days=3)
-    url = "https://api.open-meteo.com/v1/forecast"
-    params = {
-        "latitude": lat,
-        "longitude": lon,
-        "daily": "precipitation_sum",
-        "timezone": "Asia/Kuala_Lumpur",
-        "start_date": start_date_api.strftime("%Y-%m-%d"),
-        "end_date": end_date.strftime("%Y-%m-%d")
-    }
-
-    response = requests.get(url, params=params)
-
-    if response.status_code != 200:
-        st.error(f"[Open-Meteo API error] Open-Meteo provides data only 7 days in the past and up to 16 days in the future. Switching to IMERG/CHIRPS historical data...")
-        return None
-
+# === BACKUP: Get 3-day rainfall from GEE ===
+def get_gee_3day_rainfall(lat, lon, end_date):
     try:
-        data = response.json()
-        precipitation = data['daily']['precipitation_sum']
-        dates = data['daily']['time']
+        start_date = end_date - datetime.timedelta(days=3)
+        region = ee.Geometry.Point(lon, lat).buffer(10000)  # ✅ 10 km buffer
 
-        selected_date_str = start_date.strftime("%Y-%m-%d")
+        dataset = ee.ImageCollection("NASA/GPM_L3/IMERG_V06") \
+            .filterDate(str(start_date), str(end_date)) \
+            .select("precipitationCal")
 
-        if selected_date_str in dates:
-            index = dates.index(selected_date_str)
-            daily_rainfall = precipitation[index] or 0.0
+        rainfall_image = dataset.sum()
+        result = rainfall_image.reduceRegion(
+            reducer=ee.Reducer.mean(),
+            geometry=region,
+            scale=10000,
+            maxPixels=1e9
+        )
 
-            # Get rainfall for 3 days before selected_date
-            if index >= 3:
-                rainfall_3d = sum(p or 0 for p in precipitation[index - 3:index])
-            else:
-                rainfall_3d = sum(p or 0 for p in precipitation[:index])
+        result_dict = result.getInfo()
+        rainfall = result_dict.get("precipitationCal", 0.0)
 
-            return {
-                "daily_rainfall": daily_rainfall,
-                "rainfall_3d": rainfall_3d,
-                "source": "Open-Meteo"
-            }
-        else:
-            st.warning("⚠️ Open-Meteo returned no data for selected date.")
-            return None
-    except KeyError:
-        st.warning("⚠️ Missing data in Open-Meteo response. Falling back to CHIRPS...")
-        return None
+        if rainfall == 0.0:
+            
+            return get_3day_rainfall_chirps(lat, lon, end_date)
 
-# === AUTO-DETECT MODEL SCHEMA & CALL PREDICTION ===
+        return rainfall
+
+    except Exception as e:
+        st.error(f"[GEE Error - IMERG 3-Day] {e}")
+        return get_3day_rainfall_chirps(lat, lon, end_date)
+
+
+# === BACKUP: Get 3-day rainfall from CHIRPS ===
+def get_3day_rainfall_chirps(lat, lon, end_date):
+    try:
+        start_date = end_date - datetime.timedelta(days=3)
+        region = ee.Geometry.Point(lon, lat).buffer(10000)
+
+        dataset = ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY") \
+            .filterDate(str(start_date), str(end_date)) \
+            .select("precipitation")
+
+        rainfall_image = dataset.sum()
+        result = rainfall_image.reduceRegion(
+            reducer=ee.Reducer.mean(),
+            geometry=region,
+            scale=10000,
+            maxPixels=1e9
+        )
+
+        result_dict = result.getInfo()
+        
+        return result_dict.get("precipitation", 0.0)
+    except Exception as e:
+        st.error(f"[CHIRPS Error - 3-Day] {e}")
+        return 0.0
+
+
+# === VERTEX AI === auto-detect model and call prediction
 def get_flood_prediction(month, rainfall_mm, rainfall_3d):
     # Use cached clients
     global endpoint_client, model_client, prediction_client
@@ -283,9 +280,7 @@ def get_flood_prediction(month, rainfall_mm, rainfall_3d):
         st.error("❌ No predictions returned.")
         return None
 
-# ------------------------------
-# FIRESTORE INITIALIZATION
-# ------------------------------
+# === FIRESTORE ===
 if not firebase_admin._apps:
     firebase_creds = json.loads(access_secret("FIREBASE_CREDENTIALS"))
 
@@ -303,9 +298,8 @@ db = firestore.client()
 
 SUBSCRIBERS_COLLECTION = "subscribers"
 
-# ------------------------------
-# GMAIL CONFIG
-# ------------------------------
+
+# === GMAIL CONFIG ===
 GMAIL_USER = access_secret("GMAIL_USER")
 GMAIL_APP_PASSWORD = access_secret("GMAIL_APP_PASSWORD")
 
