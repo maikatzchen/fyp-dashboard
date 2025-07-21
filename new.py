@@ -57,7 +57,7 @@ def get_vertex_ai_clients():
 endpoint_client, model_client, prediction_client = get_vertex_ai_clients()
 
 # === PRIMARY: Get daily rainfall from Open-Meteo ===
-def get_openmeteo_rainfall(lat, lon, start_date, end_date):
+def get_openmeteo_rainfall(lat, lon, start_date, end_date, suppress_warnings=False):
     """
     Get daily accumulated rainfall (mm) and 3-day accumulated rainfall (mm before selected_date) from Open-Meteo API
     """
