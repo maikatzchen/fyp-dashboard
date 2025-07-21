@@ -151,8 +151,7 @@ def get_daily_rainfall_gee(lat, lon, date_input, suppress_warnings=False):
 
     except Exception as e:
         if not suppress_warnings:
-            st.error(f"[GEE Error] {e}")
-            st.warning("Switching to CHIRPS as fallback...")
+            
         return get_daily_rainfall_chirps(lat, lon, date_input)
 
 # === BACKUP: Get Daily rainfall from CHIRPS ===
@@ -186,7 +185,7 @@ def get_daily_rainfall_chirps(lat, lon, date_input, suppress_warnings=False):
 
     except Exception as e:
         if not suppress_warnings:
-            st.error(f"[CHIRPS Error] {e}")
+            
         return 0.0, "CHIRPS"
         
 # === BACKUP: Get 3-day rainfall from GEE ===
@@ -218,7 +217,7 @@ def get_gee_3day_rainfall(lat, lon, end_date, suppress_warnings=False):
 
     except Exception as e:
         if not suppress_warnings:
-            st.error(f"[GEE Error - IMERG 3-Day] {e}")
+            
         return get_3day_rainfall_chirps(lat, lon, end_date)
 
 
@@ -245,7 +244,7 @@ def get_3day_rainfall_chirps(lat, lon, end_date, suppress_warnings=False):
         return result_dict.get("precipitation", 0.0), "CHIRPS"
     except Exception as e:
         if not suppress_warnings:
-            st.error(f"[CHIRPS Error - 3-Day] {e}")
+            
         return 0.0, "CHIRPS"
 
 
