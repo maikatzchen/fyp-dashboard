@@ -187,7 +187,7 @@ def get_daily_rainfall_chirps(lat, lon, date_input, suppress_warnings=False):
     except Exception as e:
         if not suppress_warnings:
             st.error(f"[CHIRPS Error] {e}")
-        return 0.0
+        return 0.0, "CHIRPS"
         
 # === BACKUP: Get 3-day rainfall from GEE ===
 def get_gee_3day_rainfall(lat, lon, end_date):
@@ -246,7 +246,7 @@ def get_3day_rainfall_chirps(lat, lon, end_date, suppress_warnings=False):
     except Exception as e:
         if not suppress_warnings:
             st.error(f"[CHIRPS Error - 3-Day] {e}")
-        return 0.0
+        return 0.0, "CHIRPS"
 
 
 # === VERTEX AI === auto-detect model and call prediction
