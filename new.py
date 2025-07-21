@@ -113,7 +113,7 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date, suppress_warnings=Fal
         return None
 
 # === BACKUP: Get Daily rainfall from GEE ===
-def get_daily_rainfall_gee(lat, lon, date_input):
+def get_daily_rainfall_gee(lat, lon, date_input, suppress_warnings=False):
     try:
         if isinstance(date_input, datetime.date):
             date_obj = datetime.datetime.combine(date_input, datetime.time())
@@ -156,7 +156,7 @@ def get_daily_rainfall_gee(lat, lon, date_input):
         return get_daily_rainfall_chirps(lat, lon, date_input)
 
 # === BACKUP: Get Daily rainfall from CHIRPS ===
-def get_daily_rainfall_chirps(lat, lon, date_input):
+def get_daily_rainfall_chirps(lat, lon, date_input, suppress_warnings=False):
     try:
         if isinstance(date_input, datetime.date):
             date_obj = datetime.datetime.combine(date_input, datetime.time())
@@ -223,7 +223,7 @@ def get_gee_3day_rainfall(lat, lon, end_date):
 
 
 # === BACKUP: Get 3-day rainfall from CHIRPS ===
-def get_3day_rainfall_chirps(lat, lon, end_date):
+def get_3day_rainfall_chirps(lat, lon, end_date, suppress_warnings=False):
     try:
         start_date = end_date - datetime.timedelta(days=3)
         region = ee.Geometry.Point(lon, lat).buffer(10000)
