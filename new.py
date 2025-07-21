@@ -78,7 +78,8 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
     response = requests.get(url, params=params)
 
     if response.status_code != 200:
-        st.error(f"[Open-Meteo API error] Open-Meteo provides data only 7 days in the past and up to 16 days in the future. Switching to IMERG/CHIRPS historical data...")
+        if not suppress_warnings:
+            st.error(f"[Open-Meteo API error] Open-Meteo provides data only 7 days in the past and up to 16 days in the future. Switching to IMERG/CHIRPS historical data...")
         return None
 
     try:
@@ -107,7 +108,8 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date):
             st.warning("⚠️ Open-Meteo returned no data for selected date.")
             return None
     except KeyError:
-        st.warning("⚠️ Missing data in Open-Meteo response. Falling back to CHIRPS...")
+        if not suppress_warnings:
+            st.warning("⚠️ Missing data in Open-Meteo response. Falling back to CHIRPS...")
         return None
 
 # === BACKUP: Get Daily rainfall from GEE ===
@@ -148,8 +150,9 @@ def get_daily_rainfall_gee(lat, lon, date_input):
         return rainfall, "IMERG"
 
     except Exception as e:
-        st.error(f"[GEE Error] {e}")
-        st.warning("Switching to CHIRPS as fallback...")
+        if not suppress_warnings:
+            st.error(f"[GEE Error] {e}")
+            st.warning("Switching to CHIRPS as fallback...")
         return get_daily_rainfall_chirps(lat, lon, date_input)
 
 # === BACKUP: Get Daily rainfall from CHIRPS ===
@@ -182,7 +185,8 @@ def get_daily_rainfall_chirps(lat, lon, date_input):
         return result_dict.get("precipitation", 0.0), "CHIRPS"
 
     except Exception as e:
-        st.error(f"[CHIRPS Error] {e}")
+        if not suppress_warnings:
+            st.error(f"[CHIRPS Error] {e}")
         return 0.0
         
 # === BACKUP: Get 3-day rainfall from GEE ===
@@ -213,7 +217,8 @@ def get_gee_3day_rainfall(lat, lon, end_date):
         return rainfall
 
     except Exception as e:
-        st.error(f"[GEE Error - IMERG 3-Day] {e}")
+        if not suppress_warnings:
+            st.error(f"[GEE Error - IMERG 3-Day] {e}")
         return get_3day_rainfall_chirps(lat, lon, end_date)
 
 
@@ -239,7 +244,8 @@ def get_3day_rainfall_chirps(lat, lon, end_date):
         
         return result_dict.get("precipitation", 0.0)
     except Exception as e:
-        st.error(f"[CHIRPS Error - 3-Day] {e}")
+        if not suppress_warnings:
+            st.error(f"[CHIRPS Error - 3-Day] {e}")
         return 0.0
 
 
@@ -488,13 +494,13 @@ def get_past_rainfall(lat, lon, end_date, days=14):
     rainfall_values = []
     
     for d in dates:
-        result = get_openmeteo_rainfall(lat, lon, d, d)
+        result = get_openmeteo_rainfall(lat, lon, d, d, suppress_warnings=True)
         if result:
             daily = result["daily_rainfall"]
         else:
-            daily, _ = get_daily_rainfall_chirps(lat, lon, d)
+            daily, _ = get_daily_rainfall_chirps(lat, lon, d, suppress_warnings=True)
             if daily == 0.0:
-                daily, _ = get_daily_rainfall_gee(lat, lon, d)
+                daily, _ = get_daily_rainfall_gee(lat, lon, d, suppress_warnings=True)
         rainfall_values.append(daily)
     
     df = pd.DataFrame({
