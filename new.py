@@ -369,22 +369,28 @@ st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
 month = selected_date.month
 openmeteo_result = get_openmeteo_rainfall(lat, lon, selected_date, selected_date)
 if openmeteo_result:
-    rainfall_day = openmeteo_result["daily_rainfall"]
-    rainfall_3d = openmeteo_result["rainfall_3d"]  # Use Open-Meteo's 3-day rainfall
-    source = openmeteo_result["source"]
+    rainfall_day_value = openmeteo_result["daily_rainfall"]
+    rainfall_3d_value = openmeteo_result["rainfall_3d"]  # Use Open-Meteo's 3-day rainfall
+    rainfall_day_source = rainfall_3d_source = openmeteo_result["source"]
 else:
-    rainfall_day, source = get_daily_rainfall_chirps(lat, lon, selected_date)
-    rainfall_3d = get_3day_rainfall_chirps(lat, lon, selected_date)
-    
-    if rainfall_day == 0.0 and rainfall_3d == 0.0:
-        rainfall_day, source = get_daily_rainfall_gee(lat, lon, selected_date)
-        rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
+    # Fallback: CHIRPS
+    rainfall_day_tuple = get_daily_rainfall_chirps(lat, lon, selected_date)
+    rainfall_day_value, rainfall_day_source = rainfall_day_tuple if isinstance(rainfall_day_tuple, tuple) else (rainfall_day_tuple, "CHIRPS")
+
+    rainfall_3d_tuple = get_3day_rainfall_chirps(lat, lon, selected_date)
+    rainfall_3d_value, rainfall_3d_source = rainfall_3d_tuple if isinstance(rainfall_3d_tuple, tuple) else (rainfall_3d_tuple, "CHIRPS")
+
+    # Fallback: IMERG if CHIRPS failed
+    if rainfall_day_value == 0.0 and rainfall_3d_value == 0.0:
+        rainfall_day_tuple = get_daily_rainfall_gee(lat, lon, selected_date)
+        rainfall_day_value, rainfall_day_source = rainfall_day_tuple if isinstance(rainfall_day_tuple, tuple) else (rainfall_day_tuple, "IMERG")
+
+        rainfall_3d_tuple = get_gee_3day_rainfall(lat, lon, selected_date)
+        rainfall_3d_value, rainfall_3d_source = rainfall_3d_tuple if isinstance(rainfall_3d_tuple, tuple) else (rainfall_3d_tuple, "IMERG")
 
 col1, col2 = st.columns(2)
-# col3.metric("Current Rainfall (mm)", f"{rainfall_hour:.2f}")
-col1.metric(f"Rainfall (mm)", f"{rainfall_day:.2f}")
-col2.metric("3-Day Rainfall (mm)", f"{rainfall_3d:.2f}" if rainfall_3d is not None else "N/A")
-
+col1.metric(f"Rainfall (mm)", f"{rainfall_day_value:.2f}")
+col2.metric("3-Day Rainfall (mm)", f"{rainfall_3d_value:.2f}" if rainfall_3d_value is not None else "N/A")
 
 # === Optional Map (showing location) ===
 map_col, predict_col = st.columns([2, 1])  # Wider map, narrower prediction block
@@ -393,18 +399,18 @@ with map_col:
     m = folium.Map(location=[lat, lon], zoom_start=12, control_scale=True)
     folium.Marker(
         [lat, lon],
-        popup=f"<b>{selected_district}</b><br>Rainfall Today: {rainfall_day} mm<br>3-Day Rainfall: {rainfall_3d} mm",
+        popup=f"<b>{selected_district}</b><br>Rainfall Today: {rainfall_day_value:.2f} mm<br>3-Day Rainfall: {rainfall_3d_value:.2f} mm",
         icon=folium.Icon(color="red", icon="info-sign")
     ).add_to(m)
 
-    # --- VISUALIZE WITH 5KM RADIUS ---
+    # --- VISUALIZE WITH 10KM RADIUS ---
     folium.Circle(
         location=[lat, lon],
-        radius=10000,  # 5 km
+        radius=10000,  # 10 km
         color="blue",
         fill=True,
         fill_opacity=0.2,
-        popup="5 km radius"
+        popup="10 km radius"
     ).add_to(m)
 
     st_folium(m, width=1000, height=500)
@@ -413,34 +419,21 @@ with predict_col:
     st.markdown("### 🎯 Flood Prediction")
     if st.button("Predict Flood Risk"):
         with st.spinner("Predicting flood risk..."):
-            result = get_flood_prediction(month, rainfall_day, rainfall_3d)
+            result = get_flood_prediction(month, rainfall_day_value, rainfall_3d_value)
 
             result_dict = dict(result)
-            
-
             classes_raw = result_dict.get("classes", "[]")
             scores_raw = result_dict.get("scores", "[]")
 
-            if isinstance(classes_raw, str):
-                try:
-                    classes = json.loads(classes_raw.replace("'", '"'))
-                except json.JSONDecodeError:
-                    st.error("❌ Failed to parse 'classes'. Check model response.")
-                    st.write("🔎 Raw 'classes':", classes_raw)
-                    classes = []
-            else:
-                classes = classes_raw
-
-            # Ensure scores is a list
-            if isinstance(scores_raw, str):
-                try:
-                    scores = json.loads(scores_raw.replace("'", '"'))
-                except json.JSONDecodeError:
-                    st.error("❌ Failed to parse 'scores'. Check model response.")
-                    st.write("🔎 Raw 'scores':", scores_raw)
-                    scores = []
-            else:
-                scores = scores_raw
+            # Parse JSON strings safely
+            try:
+                classes = json.loads(classes_raw.replace("'", '"')) if isinstance(classes_raw, str) else classes_raw
+                scores = json.loads(scores_raw.replace("'", '"')) if isinstance(scores_raw, str) else scores_raw
+            except json.JSONDecodeError:
+                st.error("❌ Failed to parse model response.")
+                st.write("🔎 Raw classes:", classes_raw)
+                st.write("🔎 Raw scores:", scores_raw)
+                classes, scores = [], []
 
             # Display prediction result
             if classes and scores:
@@ -452,7 +445,6 @@ with predict_col:
                     flood_percent = round(flood_prob * 100, 2)
                     no_flood_percent = round(no_flood_prob * 100, 2)
 
-                
                     st.metric("🌊 Flood Probability", f"{flood_percent}%")
                     st.metric("☀️ No Flood Probability", f"{no_flood_percent}%")
 
@@ -471,19 +463,19 @@ with predict_col:
                                     message_html=f"""
                                         <h2>🚨 Flood Predicted!</h2>
                                         <p>A potential flood has been predicted for <b>{selected_district}</b> on {selected_date.strftime('%Y-%m-%d')}.</p>
-                                        <p>Rainfall Today: {rainfall_day:.2f} mm<br>3-Day Rainfall: {rainfall_3d:.2f} mm</p>
+                                        <p>Rainfall Today: {rainfall_day_value:.2f} mm<br>3-Day Rainfall: {rainfall_3d_value:.2f} mm</p>
                                         <p>Stay safe and follow local authorities' instructions.</p>
                                     """,
                                     to_email=sub_email
-                            )
+                                )
                         st.success("✅ Flood alerts sent to all subscribers!")
-                    
+                    else:
+                        st.success(f"✅ **Predicted: {predicted_class}**")
                 else:
-                    st.success(f"✅ **Predicted: {predicted_class}**")
-
+                    st.error("❌ Class '1' (Flood) not found in model response.")
+                    st.write("🔎 Classes:", classes)
             else:
-                st.error("❌ Class '1' (Flood) not found in model response.")
-                st.write("🔎 Classes:", classes)
+                st.error("❌ No predictions returned.")
 
 # === GRAPH FOR VISUALIZATION ===
 st.subheader(f"📊 Rainfall Trends for {selected_district}")
