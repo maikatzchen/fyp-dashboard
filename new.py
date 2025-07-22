@@ -360,9 +360,9 @@ st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
 month = selected_date.month
 openmeteo_result = get_openmeteo_rainfall(lat, lon, selected_date, selected_date)
 if openmeteo_result:
-        rainfall_day = openmeteo_result["daily_rainfall"]
-        rainfall_3d = openmeteo_result["rainfall_3d"]  # Use Open-Meteo's 3-day rainfall
-        source = openmeteo_result["source"]
+    rainfall_day = openmeteo_result["daily_rainfall"]
+    rainfall_3d = openmeteo_result["rainfall_3d"]  # Use Open-Meteo's 3-day rainfall
+    source = openmeteo_result["source"]
     else:
         rainfall_day_tuple = get_daily_rainfall_gee(lat, lon, selected_date)
         rainfall_day, source = rainfall_day_tuple if isinstance(rainfall_day_tuple, tuple) else (rainfall_day_tuple, "IMERG")
