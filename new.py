@@ -144,13 +144,10 @@ def get_daily_rainfall_gee(lat, lon, date_input, suppress_warnings=False):
 
         # Use fallback if IMERG has 0.0
         if rainfall == 0.0:
-            
-            return get_daily_rainfall_chirps(lat, lon, date_input)  # ✅ returns tuple (value, source)
-
+            return get_daily_rainfall_chirps(lat, lon, date_input, suppress_warnings)  # ✅ returns tuple (value, source)
         return rainfall, "IMERG"
-
     except Exception as e:
-        return get_daily_rainfall_chirps(lat, lon, date_input)
+        return get_daily_rainfall_chirps(lat, lon, date_input, suppress_warnings)
 
 # === BACKUP: Get Daily rainfall from CHIRPS ===
 def get_daily_rainfall_chirps(lat, lon, date_input, suppress_warnings=False):
@@ -168,7 +165,6 @@ def get_daily_rainfall_chirps(lat, lon, date_input, suppress_warnings=False):
             .filterDate(start_date, end_date) \
             .select("precipitation")
         
-
         daily_precip = dataset.sum()
         result = daily_precip.reduceRegion(
             reducer=ee.Reducer.mean(),
@@ -178,9 +174,8 @@ def get_daily_rainfall_chirps(lat, lon, date_input, suppress_warnings=False):
         )
 
         result_dict = result.getInfo()
-        
+    
         return result_dict.get("precipitation", 0.0), "CHIRPS"
-
     except Exception as e:
         return 0.0, "CHIRPS"
         
@@ -207,12 +202,10 @@ def get_gee_3day_rainfall(lat, lon, end_date, suppress_warnings=False):
 
         if rainfall == 0.0:
             
-            return get_3day_rainfall_chirps(lat, lon, end_date)
-
+            return get_3day_rainfall_chirps(lat, lon, end_date, suppress_warnings)
         return rainfall
-
     except Exception as e:
-        return get_3day_rainfall_chirps(lat, lon, end_date)
+        return get_3day_rainfall_chirps(lat, lon, end_date, suppress_warnings)
 
 
 # === BACKUP: Get 3-day rainfall from CHIRPS ===
@@ -362,7 +355,7 @@ openmeteo_result = get_openmeteo_rainfall(lat, lon, selected_date, selected_date
 if openmeteo_result:
     rainfall_day = openmeteo_result["daily_rainfall"]
     rainfall_3d = openmeteo_result["rainfall_3d"]  # Use Open-Meteo's 3-day rainfall
-    source = openmeteo_result["source"]
+    source = "IMERG/CHIRPS"
 else:
     rainfall_day_tuple = get_daily_rainfall_gee(lat, lon, selected_date)
     rainfall_day, source = rainfall_day_tuple if isinstance(rainfall_day_tuple, tuple) else (rainfall_day_tuple, "IMERG")
@@ -376,8 +369,7 @@ else:
 
 col1, col2 = st.columns(2)
 col1.metric(f"Rainfall (mm)", f"{rainfall_day:.2f}")
-rainfall_3d_value = rainfall_3d[0] if isinstance(rainfall_3d, tuple) else rainfall_3d
-col2.metric("3-Day Rainfall (mm)", f"{rainfall_3d_value:.2f}" if rainfall_3d_value is not None else "N/A")
+col2.metric("3-Day Rainfall (mm)", f"{rainfall_3d:.2f}")
 
 # === Optional Map (showing location) ===
 map_col, predict_col = st.columns([2, 1])  # Wider map, narrower prediction block
