@@ -376,7 +376,8 @@ else:
 
 col1, col2 = st.columns(2)
 col1.metric(f"Rainfall (mm)", f"{rainfall_day:.2f}")
-col2.metric("3-Day Rainfall (mm)", f"{rainfall_3d:.2f}" if rainfall_3d is not None else "N/A")
+rainfall_3d_value = rainfall_3d[0] if isinstance(rainfall_3d, tuple) else rainfall_3d
+col2.metric("3-Day Rainfall (mm)", f"{rainfall_3d_value:.2f}" if rainfall_3d_value is not None else "N/A")
 
 # === Optional Map (showing location) ===
 map_col, predict_col = st.columns([2, 1])  # Wider map, narrower prediction block
