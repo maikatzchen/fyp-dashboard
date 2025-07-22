@@ -207,7 +207,7 @@ def get_gee_3day_rainfall(lat, lon, end_date, suppress_warnings=False):
         if rainfall == 0.0:
             
             return get_3day_rainfall_chirps(lat, lon, end_date, suppress_warnings)
-        return rainfall
+        return rainfall, "IMERG"
     except Exception as e:
         return get_3day_rainfall_chirps(lat, lon, end_date, suppress_warnings)
 
