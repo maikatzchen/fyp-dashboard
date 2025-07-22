@@ -360,12 +360,14 @@ else:
     rainfall_day_tuple = get_daily_rainfall_gee(lat, lon, selected_date)
     rainfall_day, source = rainfall_day_tuple if isinstance(rainfall_day_tuple, tuple) else (rainfall_day_tuple, "IMERG")
 
-    rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
+    rainfall_3d_result = get_gee_3day_rainfall(lat, lon, selected_date)
+    rainfall_3d = rainfall_3d_result[0] if isinstance(rainfall_3d_result, tuple) else rainfall_3d_result
 
     if rainfall_day == 0.0 and rainfall_3d == 0.0:
         # Final fallback to CHIRPS
         rainfall_day, source = get_daily_rainfall_chirps(lat, lon, selected_date)
-        rainfall_3d = get_3day_rainfall_chirps(lat, lon, selected_date)
+        rainfall_3d_result = get_3day_rainfall_chirps(lat, lon, selected_date)
+        rainfall_3d = rainfall_3d_result[0] if isinstance(rainfall_3d_result, tuple) else rainfall_3d_result
 
 col1, col2 = st.columns(2)
 col1.metric(f"Rainfall (mm)", f"{rainfall_day:.2f}")
