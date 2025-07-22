@@ -385,7 +385,7 @@ with map_col:
     m = folium.Map(location=[lat, lon], zoom_start=12, control_scale=True)
     folium.Marker(
         [lat, lon],
-        popup=f"<b>{selected_district}</b><br>Rainfall Today: {rainfall_day_value:.2f} mm<br>3-Day Rainfall: {rainfall_3d_value:.2f} mm",
+        popup=f"<b>{selected_district}</b><br>Rainfall Today: {rainfall_day:.2f} mm<br>3-Day Rainfall: {rainfall_3d:.2f} mm",
         icon=folium.Icon(color="red", icon="info-sign")
     ).add_to(m)
 
@@ -405,7 +405,7 @@ with predict_col:
     st.markdown("### 🎯 Flood Prediction")
     if st.button("Predict Flood Risk"):
         with st.spinner("Predicting flood risk..."):
-            result = get_flood_prediction(month, rainfall_day_value, rainfall_3d_value)
+            result = get_flood_prediction(month, rainfall_day, rainfall_3d)
 
             result_dict = dict(result)
             classes_raw = result_dict.get("classes", "[]")
@@ -449,7 +449,7 @@ with predict_col:
                                     message_html=f"""
                                         <h2>🚨 Flood Predicted!</h2>
                                         <p>A potential flood has been predicted for <b>{selected_district}</b> on {selected_date.strftime('%Y-%m-%d')}.</p>
-                                        <p>Rainfall Today: {rainfall_day_value:.2f} mm<br>3-Day Rainfall: {rainfall_3d_value:.2f} mm</p>
+                                        <p>Rainfall Today: {rainfall_day:.2f} mm<br>3-Day Rainfall: {rainfall_3d:.2f} mm</p>
                                         <p>Stay safe and follow local authorities' instructions.</p>
                                     """,
                                     to_email=sub_email
