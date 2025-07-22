@@ -359,9 +359,7 @@ st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
 # Get real-time values
 month = selected_date.month
 openmeteo_result = get_openmeteo_rainfall(lat, lon, selected_date, selected_date)
-if use_openmeteo:
-    openmeteo_result = get_openmeteo_rainfall(lat, lon, selected_date, selected_date)
-    if openmeteo_result:
+if openmeteo_result:
         rainfall_day = openmeteo_result["daily_rainfall"]
         rainfall_3d = openmeteo_result["rainfall_3d"]  # Use Open-Meteo's 3-day rainfall
         source = openmeteo_result["source"]
