@@ -57,6 +57,7 @@ def get_vertex_ai_clients():
 endpoint_client, model_client, prediction_client = get_vertex_ai_clients()
 
 # === PRIMARY: Get daily rainfall from Open-Meteo ===
+@st.cache_data(ttl=3600)
 def get_openmeteo_rainfall(lat, lon, start_date, end_date, suppress_warnings=False):
     """
     Get daily accumulated rainfall (mm) and 3-day accumulated rainfall (mm before selected_date) from Open-Meteo API
@@ -113,6 +114,7 @@ def get_openmeteo_rainfall(lat, lon, start_date, end_date, suppress_warnings=Fal
         return None
 
 # === BACKUP: Get Daily rainfall from GEE ===
+@st.cache_data(ttl=3600)
 def get_daily_rainfall_gee(lat, lon, date_input, suppress_warnings=False):
     try:
         if isinstance(date_input, datetime.date):
@@ -150,6 +152,7 @@ def get_daily_rainfall_gee(lat, lon, date_input, suppress_warnings=False):
         return get_daily_rainfall_chirps(lat, lon, date_input, suppress_warnings)
 
 # === BACKUP: Get Daily rainfall from CHIRPS ===
+@st.cache_data(ttl=3600)
 def get_daily_rainfall_chirps(lat, lon, date_input, suppress_warnings=False):
     try:
         if isinstance(date_input, datetime.date):
@@ -180,6 +183,7 @@ def get_daily_rainfall_chirps(lat, lon, date_input, suppress_warnings=False):
         return 0.0, "CHIRPS"
         
 # === BACKUP: Get 3-day rainfall from GEE ===
+@st.cache_data(ttl=3600)
 def get_gee_3day_rainfall(lat, lon, end_date, suppress_warnings=False):
     try:
         start_date = end_date - datetime.timedelta(days=3)
@@ -209,6 +213,7 @@ def get_gee_3day_rainfall(lat, lon, end_date, suppress_warnings=False):
 
 
 # === BACKUP: Get 3-day rainfall from CHIRPS ===
+@st.cache_data(ttl=3600)
 def get_3day_rainfall_chirps(lat, lon, end_date, suppress_warnings=False):
     try:
         start_date = end_date - datetime.timedelta(days=3)
@@ -351,23 +356,26 @@ st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
 
 # Get real-time values
 month = selected_date.month
-openmeteo_result = get_openmeteo_rainfall(lat, lon, selected_date, selected_date)
-if openmeteo_result:
-    rainfall_day = openmeteo_result["daily_rainfall"]
-    rainfall_3d = openmeteo_result["rainfall_3d"]  # Use Open-Meteo's 3-day rainfall
-    source = "IMERG/CHIRPS"
+# Try Open-Meteo first
+openmeteo = get_openmeteo_rainfall(lat, lon, selected_date, selected_date)
+if openmeteo:
+    rainfall_day = openmeteo["daily_rainfall"]
+    rainfall_3d = openmeteo["rainfall_3d"]
+    source = "Open-Meteo API"
 else:
-    rainfall_day_tuple = get_daily_rainfall_gee(lat, lon, selected_date)
-    rainfall_day, source = rainfall_day_tuple if isinstance(rainfall_day_tuple, tuple) else (rainfall_day_tuple, "IMERG")
+    # Directly call IMERG, no fallback inside
+    imerg_value, imerg_source = get_daily_rainfall_gee(lat, lon, selected_date)
+    rainfall_day = imerg_value
+    source = imerg_source
 
-    rainfall_3d_result = get_gee_3day_rainfall(lat, lon, selected_date)
-    rainfall_3d = rainfall_3d_result[0] if isinstance(rainfall_3d_result, tuple) else rainfall_3d_result
+    rainfall_3d, _ = get_gee_3day_rainfall(lat, lon, selected_date)
 
-    if rainfall_day == 0.0 and rainfall_3d == 0.0:
-        # Final fallback to CHIRPS
+    # If still 0.0, fallback directly to CHIRPS
+    if rainfall_day == 0.0:
         rainfall_day, source = get_daily_rainfall_chirps(lat, lon, selected_date)
-        rainfall_3d_result = get_3day_rainfall_chirps(lat, lon, selected_date)
-        rainfall_3d = rainfall_3d_result[0] if isinstance(rainfall_3d_result, tuple) else rainfall_3d_result
+    if rainfall_3d == 0.0:
+        rainfall_3d, _ = get_3day_rainfall_chirps(lat, lon, selected_date)
+
 
 col1, col2 = st.columns(2)
 col1.metric(f"Rainfall (mm)", f"{rainfall_day:.2f}")
