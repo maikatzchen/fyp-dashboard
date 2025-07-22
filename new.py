@@ -359,29 +359,23 @@ st.subheader(f"🌇 Real-Time Weather Data for {selected_district}")
 # Get real-time values
 month = selected_date.month
 openmeteo_result = get_openmeteo_rainfall(lat, lon, selected_date, selected_date)
-if openmeteo_result:
-    rainfall_day_value = openmeteo_result["daily_rainfall"]
-    rainfall_3d_value = openmeteo_result["rainfall_3d"]  # Use Open-Meteo's 3-day rainfall
-    rainfall_day_source = rainfall_3d_source = openmeteo_result["source"]
+if use_openmeteo:
+    openmeteo_result = get_openmeteo_rainfall(lat, lon, selected_date, selected_date)
+    if openmeteo_result:
+        rainfall_day = openmeteo_result["daily_rainfall"]
+        rainfall_3d = openmeteo_result["rainfall_3d"]  # Use Open-Meteo's 3-day rainfall
+        source = openmeteo_result["source"]
+    else:
+        rainfall_day, source = get_daily_rainfall_gee(lat, lon, selected_date)
+        rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
+        
 else:
-    # Fallback: CHIRPS
-    rainfall_day_tuple = get_daily_rainfall_gee(lat, lon, selected_date)
-    rainfall_day_value, rainfall_day_source = rainfall_day_tuple if isinstance(rainfall_day_tuple, tuple) else (rainfall_day_tuple, "IMERG")
-
-    rainfall_3d_tuple = get_gee_3day_rainfall(lat, lon, selected_date)
-    rainfall_3d_value, rainfall_3d_source = rainfall_3d_tuple if isinstance(rainfall_3d_tuple, tuple) else (rainfall_3d_tuple, "IMERG")
-
-    # Fallback: IMERG if CHIRPS failed
-    if rainfall_day_value == 0.0 and rainfall_3d_value == 0.0:
-        rainfall_day_tuple = get_daily_rainfall_chirps(lat, lon, selected_date)
-        rainfall_day_value, rainfall_day_source = rainfall_day_tuple if isinstance(rainfall_day_tuple, tuple) else (rainfall_day_tuple, "CHIRPS")
-
-        rainfall_3d_tuple = get_3day_rainfall_chirps(lat, lon, selected_date)
-        rainfall_3d_value, rainfall_3d_source = rainfall_3d_tuple if isinstance(rainfall_3d_tuple, tuple) else (rainfall_3d_tuple, "CHIRPS")
+    rainfall_day, source = get_daily_rainfall_chirps(lat, lon, selected_date)
+    rainfall_3d = get_3day_rainfall_chirps(lat, lon, selected_date)
 
 col1, col2 = st.columns(2)
-col1.metric(f"Rainfall (mm)", f"{rainfall_day_value:.2f}")
-col2.metric("3-Day Rainfall (mm)", f"{rainfall_3d_value:.2f}" if rainfall_3d_value is not None else "N/A")
+col1.metric(f"Rainfall (mm)", f"{rainfall_day:.2f}")
+col2.metric("3-Day Rainfall (mm)", f"{rainfall_3d:.2f}" if rainfall_3d_value is not None else "N/A")
 
 # === Optional Map (showing location) ===
 map_col, predict_col = st.columns([2, 1])  # Wider map, narrower prediction block
@@ -482,9 +476,9 @@ def get_past_rainfall(lat, lon, end_date, days=14, suppress_warnings=False):
         if result:
             daily = result["daily_rainfall"]
         else:
-            daily, _ = get_daily_rainfall_chirps(lat, lon, d, suppress_warnings=True)
+            daily, _ = get_daily_rainfall_gee(lat, lon, d, suppress_warnings=True)
             if daily == 0.0:
-                daily, _ = get_daily_rainfall_gee(lat, lon, d, suppress_warnings=True)
+                daily, _ = get_daily_rainfall_chirps(lat, lon, d, suppress_warnings=True)
         rainfall_values.append(daily)
     
     df = pd.DataFrame({
