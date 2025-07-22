@@ -364,12 +364,15 @@ if openmeteo_result:
         rainfall_3d = openmeteo_result["rainfall_3d"]  # Use Open-Meteo's 3-day rainfall
         source = openmeteo_result["source"]
     else:
-        rainfall_day, source = get_daily_rainfall_gee(lat, lon, selected_date)
+        rainfall_day_tuple = get_daily_rainfall_gee(lat, lon, selected_date)
+        rainfall_day, source = rainfall_day_tuple if isinstance(rainfall_day_tuple, tuple) else (rainfall_day_tuple, "IMERG")
+
         rainfall_3d = get_gee_3day_rainfall(lat, lon, selected_date)
-        
-else:
-    rainfall_day, source = get_daily_rainfall_chirps(lat, lon, selected_date)
-    rainfall_3d = get_3day_rainfall_chirps(lat, lon, selected_date)
+
+        if rainfall_day == 0.0 and rainfall_3d == 0.0:
+            # Final fallback to CHIRPS
+            rainfall_day, source = get_daily_rainfall_chirps(lat, lon, selected_date)
+            rainfall_3d = get_3day_rainfall_chirps(lat, lon, selected_date)
 
 col1, col2 = st.columns(2)
 col1.metric(f"Rainfall (mm)", f"{rainfall_day:.2f}")
