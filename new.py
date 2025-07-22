@@ -365,19 +365,19 @@ if openmeteo_result:
     rainfall_day_source = rainfall_3d_source = openmeteo_result["source"]
 else:
     # Fallback: CHIRPS
-    rainfall_day_tuple = get_daily_rainfall_chirps(lat, lon, selected_date)
-    rainfall_day_value, rainfall_day_source = rainfall_day_tuple if isinstance(rainfall_day_tuple, tuple) else (rainfall_day_tuple, "CHIRPS")
+    rainfall_day_tuple = get_daily_rainfall_gee(lat, lon, selected_date)
+    rainfall_day_value, rainfall_day_source = rainfall_day_tuple if isinstance(rainfall_day_tuple, tuple) else (rainfall_day_tuple, "IMERG")
 
-    rainfall_3d_tuple = get_3day_rainfall_chirps(lat, lon, selected_date)
-    rainfall_3d_value, rainfall_3d_source = rainfall_3d_tuple if isinstance(rainfall_3d_tuple, tuple) else (rainfall_3d_tuple, "CHIRPS")
+    rainfall_3d_tuple = get_gee_3day_rainfall(lat, lon, selected_date)
+    rainfall_3d_value, rainfall_3d_source = rainfall_3d_tuple if isinstance(rainfall_3d_tuple, tuple) else (rainfall_3d_tuple, "IMERG")
 
     # Fallback: IMERG if CHIRPS failed
     if rainfall_day_value == 0.0 and rainfall_3d_value == 0.0:
-        rainfall_day_tuple = get_daily_rainfall_gee(lat, lon, selected_date)
-        rainfall_day_value, rainfall_day_source = rainfall_day_tuple if isinstance(rainfall_day_tuple, tuple) else (rainfall_day_tuple, "IMERG")
+        rainfall_day_tuple = get_daily_rainfall_chirps(lat, lon, selected_date)
+        rainfall_day_value, rainfall_day_source = rainfall_day_tuple if isinstance(rainfall_day_tuple, tuple) else (rainfall_day_tuple, "CHIRPS")
 
-        rainfall_3d_tuple = get_gee_3day_rainfall(lat, lon, selected_date)
-        rainfall_3d_value, rainfall_3d_source = rainfall_3d_tuple if isinstance(rainfall_3d_tuple, tuple) else (rainfall_3d_tuple, "IMERG")
+        rainfall_3d_tuple = get_3day_rainfall_chirps(lat, lon, selected_date)
+        rainfall_3d_value, rainfall_3d_source = rainfall_3d_tuple if isinstance(rainfall_3d_tuple, tuple) else (rainfall_3d_tuple, "CHIRPS")
 
 col1, col2 = st.columns(2)
 col1.metric(f"Rainfall (mm)", f"{rainfall_day_value:.2f}")
