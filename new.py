@@ -6,7 +6,7 @@ import requests
 import datetime
 from datetime import date
 import ee
-import folium
+import folium  
 from streamlit_folium import st_folium
 from google.oauth2 import service_account
 from google.cloud import aiplatform_v1
