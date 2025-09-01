@@ -4,7 +4,7 @@ import json
 import streamlit as st
 import requests
 import datetime
-from datetime import date
+from datetime import date 
 import ee
 import folium  
 from streamlit_folium import st_folium
